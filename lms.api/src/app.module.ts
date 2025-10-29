@@ -1,12 +1,20 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { AuthModule } from '@thallesp/nestjs-better-auth';
+import { AppAuthModule } from 'src/modules/auth/auth.module';
+import { auth } from 'src/utils/auth';
 import { validate } from 'src/utils/env.validation';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
 
 @Module({
-  imports: [ConfigModule.forRoot({ isGlobal: true, validate })],
-  controllers: [AppController],
-  providers: [AppService],
+  imports: [
+    ConfigModule.forRoot({ isGlobal: true, validate }),
+    AuthModule.forRoot({
+      auth,
+      isGlobal: true,
+    }),
+    AppAuthModule,
+  ],
+  controllers: [],
+  providers: [],
 })
 export class AppModule {}
