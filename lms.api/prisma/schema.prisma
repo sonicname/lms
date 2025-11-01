@@ -23,6 +23,11 @@ model User {
   sessions Session[]
   Assets   Assets[]
 
+  // Classes where this user is the teacher
+  classesTeaching  Class[]        @relation("TeacherClasses")
+  // Class enrollments when this user is a student
+  classEnrollments ClassStudent[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -55,4 +60,44 @@ model Assets {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model Class {
+  id          String  @id @default(uuid())
+  name        String
+  description String?
+  code        String  @unique
+
+  // One teacher per class
+  teacherId String
+  teacher   User   @relation("TeacherClasses", fields: [teacherId], references: [id])
+
+  // Many students via explicit join table
+  students ClassStudent[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([teacherId])
+}
+
+// Explicit many-to-many join between Class and User (students)
+model ClassStudent {
+  classId   String
+  studentId String
+
+  class   Class @relation(fields: [classId], references: [id], onDelete: Cascade)
+  student User  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  createdAt  DateTime         @default(now())
+  status     EnrollmentStatus @default(pending)
+  approvedAt DateTime?
+
+  @@id([classId, studentId])
+  @@index([studentId])
+}
+
+enum EnrollmentStatus {
+  pending
+  approved
 }

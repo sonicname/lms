@@ -4,6 +4,7 @@ import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'node:path';
 import { AssetsModule } from 'src/modules/assets/assets.module';
 import { AppAuthModule } from 'src/modules/auth/auth.module';
+import { ClassesModule } from 'src/modules/classes/classes.module';
 import { UsersModule } from 'src/modules/users/users.module';
 import { validate } from 'src/utils/env.validation';
 
@@ -18,6 +19,7 @@ import { validate } from 'src/utils/env.validation';
     AppAuthModule,
     UsersModule,
     AssetsModule,
+    ClassesModule,
   ],
 })
 export class AppModule {}
