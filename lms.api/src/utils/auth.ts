@@ -1,10 +1,10 @@
-import { betterAuth } from 'better-auth';
+import { betterAuth, BetterAuthOptions } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { PrismaClient } from '../generated/prisma/client';
 
 const prisma = new PrismaClient();
 
-export const auth = betterAuth({
+const authConfig = {
   database: prismaAdapter(prisma, {
     provider: 'postgresql',
   }),
@@ -25,4 +25,6 @@ export const auth = betterAuth({
   verification: {
     modelName: 'verification',
   },
-});
+} satisfies BetterAuthOptions;
+
+export const auth = betterAuth(authConfig);
