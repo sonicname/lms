@@ -7,6 +7,7 @@ import {
 import { PrismaService } from 'src/databases/prisma.service';
 import { Role } from 'src/modules/auth/constants/roles.enum';
 import { CreateClassDto } from './dtos/create-class.dto';
+import { ListAvailableStudentsDto } from './dtos/list-available-students.dto';
 import { ListClassStudentsDto } from './dtos/list-class-students.dto';
 import { ListClassesDto } from './dtos/list-classes.dto';
 import { UpdateClassDto } from './dtos/update-class.dto';
@@ -395,6 +396,49 @@ export class ClassesService {
         },
       }),
       this.prisma.class.count({ where }),
+    ]);
+
+    return {
+      data,
+      meta: { page, limit, total, totalPages: Math.ceil(total / limit) || 1 },
+    };
+  }
+
+  async listAvailableStudents(
+    actorId: string,
+    actorRole: Role,
+    classId: string,
+    query: ListAvailableStudentsDto,
+  ) {
+    const cls = await this.prisma.class.findUnique({ where: { id: classId } });
+    if (!cls) throw new NotFoundException('Class not found');
+    if (actorRole !== Role.Admin && cls.teacherId !== actorId)
+      throw new ForbiddenException('Not allowed');
+
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 10;
+    const skip = (page - 1) * limit;
+
+    const where: any = {
+      role: Role.Student,
+      classEnrollments: { none: { classId } },
+    };
+    if (query.search) {
+      where.OR = [
+        { name: { contains: query.search, mode: 'insensitive' } },
+        { email: { contains: query.search, mode: 'insensitive' } },
+      ];
+    }
+
+    const [data, total] = await this.prisma.$transaction([
+      this.prisma.user.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+        select: { id: true, name: true, email: true, image: true },
+      }),
+      this.prisma.user.count({ where }),
     ]);
 
     return {

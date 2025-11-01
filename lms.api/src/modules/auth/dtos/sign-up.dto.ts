@@ -3,7 +3,6 @@ import {
   IsEmail,
   IsOptional,
   IsString,
-  IsUrl,
   MaxLength,
   MinLength,
 } from 'class-validator';
@@ -23,7 +22,7 @@ export class SignUpDto {
   password: string;
 
   @IsOptional()
-  @IsUrl()
+  @IsString()
   callbackURL?: string;
 
   @IsOptional()
@@ -31,6 +30,6 @@ export class SignUpDto {
   rememberMe?: boolean;
 
   @IsOptional()
-  @IsUrl()
+  @IsString()
   image?: string;
 }

@@ -24,6 +24,7 @@ import { DeleteClassDocs } from './docs/delete-class.docs';
 import { GetClassDocs } from './docs/get-class.docs';
 import { JoinClassDocs } from './docs/join-class.docs';
 import { KickStudentDocs } from './docs/kick-student.docs';
+import { ListAvailableStudentsDocs } from './docs/list-available-students.docs';
 import { ListClassesDocs } from './docs/list-classes.docs';
 import { ListMyClassesDocs } from './docs/list-my-classes.docs';
 import { ListStudentsDocs } from './docs/list-students.docs';
@@ -31,6 +32,7 @@ import { RejectStudentDocs } from './docs/reject-student.docs';
 import { UpdateClassDocs } from './docs/update-class.docs';
 import { AddStudentDto } from './dtos/add-student.dto';
 import { CreateClassDto } from './dtos/create-class.dto';
+import { ListAvailableStudentsDto } from './dtos/list-available-students.dto';
 import { ListClassStudentsDto } from './dtos/list-class-students.dto';
 import { ListClassesDto } from './dtos/list-classes.dto';
 import { UpdateClassDto } from './dtos/update-class.dto';
@@ -183,6 +185,26 @@ export class ClassesController {
     const actorId = req.user!.id;
     const actorRole = (await this.getRoleFromRequest(req)) as Role;
     return this.classesService.listClassStudents(
+      actorId,
+      actorRole,
+      classId,
+      query,
+    );
+  }
+
+  // Admin/Teacher: list available students (not enrolled or requested) for a class
+  @Get(':id/available-students')
+  @UseGuards(RolesGuard)
+  @Roles(Role.Admin, Role.Teacher)
+  @ListAvailableStudentsDocs()
+  async listAvailableStudents(
+    @Req() req: Request & { user?: { id: string } },
+    @Param('id') classId: string,
+    @Query() query: ListAvailableStudentsDto,
+  ) {
+    const actorId = req.user!.id;
+    const actorRole = (await this.getRoleFromRequest(req)) as Role;
+    return this.classesService.listAvailableStudents(
       actorId,
       actorRole,
       classId,

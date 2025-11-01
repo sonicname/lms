@@ -3,7 +3,6 @@ import {
   IsEmail,
   IsOptional,
   IsString,
-  IsUrl,
   MinLength,
 } from 'class-validator';
 
@@ -17,7 +16,7 @@ export class SignInDto {
   password: string;
 
   @IsOptional()
-  @IsUrl()
+  @IsString()
   callbackURL?: string;
 
   @IsOptional()
