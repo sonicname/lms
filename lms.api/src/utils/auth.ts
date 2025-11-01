@@ -37,6 +37,7 @@ const authConfig = {
   }),
   secret: process.env.BETTER_AUTH_SECRET!,
   baseURL: process.env.BETTER_AUTH_URL!,
+  basePath: '/api/auth',
   emailAndPassword: {
     enabled: true,
   },
@@ -48,6 +49,12 @@ const authConfig = {
   },
   session: {
     modelName: 'session',
+    expiresIn: 60 * 60 * 24 * 7, // 7 days
+    updateAge: 60 * 60 * 24, // 1 days,
+    cookieCache: {
+      enabled: true,
+      maxAge: 60 * 60 * 24 * 1, // 1 days
+    },
   },
   verification: {
     modelName: 'verification',

@@ -10,7 +10,6 @@ import { validate } from 'src/utils/env.validation';
     ConfigModule.forRoot({ isGlobal: true, validate }),
     AuthModule.forRoot({
       auth,
-      isGlobal: true,
       disableGlobalAuthGuard: true,
     }),
     AppAuthModule,
