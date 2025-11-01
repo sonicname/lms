@@ -6,6 +6,7 @@ import {
 import * as bcrypt from 'bcryptjs';
 import { PrismaService } from 'src/databases/prisma.service';
 import type { Prisma } from 'src/generated/prisma/client';
+import { Role } from 'src/modules/auth/constants/roles.enum';
 import { BanUserDto } from 'src/modules/users/dtos/ban-user.dto';
 import { CreateUserDto } from 'src/modules/users/dtos/create-user.dto';
 import { ListUsersDto } from 'src/modules/users/dtos/list-users.dto';
@@ -167,6 +168,10 @@ export class UsersService {
     if (query.role) whereAnd.push({ role: query.role });
     if (typeof query.banned === 'boolean')
       whereAnd.push({ banned: query.banned });
+    if (query.excludeAdmins === true) {
+      // exclude admin role
+      whereAnd.push({ NOT: { role: Role.Admin } });
+    }
 
     const where: Prisma.UserWhereInput = whereAnd.length
       ? { AND: whereAnd }

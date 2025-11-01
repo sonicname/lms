@@ -20,6 +20,7 @@ import { BanUserDocs } from 'src/modules/users/docs/ban-user.docs';
 import { CreateUserDocs } from 'src/modules/users/docs/create-user.docs';
 import { DeleteUserDocs } from 'src/modules/users/docs/delete-user.docs';
 import { GetMeDocs } from 'src/modules/users/docs/get-me.docs';
+import { ListNonAdminUsersDocs } from 'src/modules/users/docs/list-non-admin-users.docs';
 import { ListUsersDocs } from 'src/modules/users/docs/list-users.docs';
 import { UnbanUserDocs } from 'src/modules/users/docs/unban-user.docs';
 import { UpdateUserDocs } from 'src/modules/users/docs/update-user.docs';
@@ -67,6 +68,16 @@ export class UsersController {
   @ListUsersDocs()
   async list(@Query() query: ListUsersDto) {
     return this.usersService.listUsers(query);
+  }
+
+  // Admin: list only teachers and students (exclude admins)
+  @Get('non-admins')
+  @UseGuards(JwtCookieAuthGuard, RolesGuard)
+  @AdminOnly()
+  @ListNonAdminUsersDocs()
+  async listNonAdmins(@Query() query: ListUsersDto) {
+    const effective = { ...query, excludeAdmins: true } as ListUsersDto;
+    return this.usersService.listUsers(effective);
   }
 
   // Admin: update user

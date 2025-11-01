@@ -59,4 +59,15 @@ export class ListUsersDto {
   @IsIn(['asc', 'desc'])
   @IsOptional()
   sortOrder?: 'asc' | 'desc' = 'desc';
+
+  @Transform(({ value }) =>
+    value === true || value === 'true' || value === '1'
+      ? true
+      : value === false || value === 'false' || value === '0'
+        ? false
+        : undefined,
+  )
+  @IsBoolean()
+  @IsOptional()
+  excludeAdmins?: boolean;
 }
