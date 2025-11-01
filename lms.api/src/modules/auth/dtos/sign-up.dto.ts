@@ -1,5 +1,7 @@
 import {
+  IsBoolean,
   IsEmail,
+  IsOptional,
   IsString,
   IsUrl,
   MaxLength,
@@ -20,14 +22,15 @@ export class SignUpDto {
   @MinLength(6)
   password: string;
 
-  @IsString()
+  @IsOptional()
   @IsUrl()
   callbackURL?: string;
 
-  @IsString()
+  @IsOptional()
+  @IsBoolean()
   rememberMe?: boolean;
 
-  @IsString()
+  @IsOptional()
   @IsUrl()
   image?: string;
 }

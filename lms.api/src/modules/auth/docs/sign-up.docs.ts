@@ -5,11 +5,36 @@ export const SignUpDocs = () => {
   return applyDecorators(
     ApiOperation({
       summary: 'Sign up',
-      description: 'Register a new user and return a JWT token.',
+      description: 'Register a new user and return tokens and profile.',
     }),
     ApiResponse({
       status: 201,
       description: 'User successfully registered',
+      schema: {
+        type: 'object',
+        properties: {
+          user: {
+            type: 'object',
+            properties: {
+              id: { type: 'string' },
+              email: { type: 'string', format: 'email' },
+              name: { type: 'string', nullable: true },
+              image: { type: 'string', format: 'uri', nullable: true },
+              createdAt: { type: 'string', format: 'date-time' },
+              updatedAt: { type: 'string', format: 'date-time' },
+            },
+          },
+          tokens: {
+            type: 'object',
+            properties: {
+              accessToken: { type: 'string' },
+              accessTokenExpiresIn: { type: 'number' },
+              refreshToken: { type: 'string' },
+              refreshTokenExpiresAt: { type: 'string', format: 'date-time' },
+            },
+          },
+        },
+      },
     }),
     ApiResponse({
       status: 400,

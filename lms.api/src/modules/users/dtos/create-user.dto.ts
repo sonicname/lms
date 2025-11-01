@@ -1,14 +1,14 @@
 import {
-  IsBoolean,
   IsEmail,
+  IsIn,
   IsOptional,
   IsString,
   IsUrl,
+  MaxLength,
   MinLength,
 } from 'class-validator';
 
-export class SignInDto {
-  @IsString()
+export class CreateUserDto {
   @IsEmail()
   email: string;
 
@@ -17,10 +17,15 @@ export class SignInDto {
   password: string;
 
   @IsOptional()
-  @IsUrl()
-  callbackURL?: string;
+  @IsString()
+  @MaxLength(50)
+  name?: string;
 
   @IsOptional()
-  @IsBoolean()
-  rememberMe?: boolean;
+  @IsUrl()
+  image?: string;
+
+  @IsOptional()
+  @IsIn(['admin', 'teacher', 'student'])
+  role?: 'admin' | 'teacher' | 'student';
 }

@@ -41,13 +41,34 @@ export const SignInDocs = () => {
       schema: {
         type: 'object',
         properties: {
-          accessToken: {
-            type: 'string',
-            example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+          user: {
+            type: 'object',
+            properties: {
+              id: { type: 'string' },
+              email: { type: 'string', format: 'email' },
+              name: { type: 'string', nullable: true },
+              image: { type: 'string', format: 'uri', nullable: true },
+              createdAt: { type: 'string', format: 'date-time' },
+              updatedAt: { type: 'string', format: 'date-time' },
+            },
           },
-          refreshToken: {
-            type: 'string',
-            example: 'def50200e3f...',
+          tokens: {
+            type: 'object',
+            properties: {
+              accessToken: {
+                type: 'string',
+                example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+              },
+              accessTokenExpiresIn: { type: 'number', example: 900 },
+              refreshToken: {
+                type: 'string',
+                example: 'def50200e3f...',
+              },
+              refreshTokenExpiresAt: {
+                type: 'string',
+                format: 'date-time',
+              },
+            },
           },
         },
       },
