@@ -401,4 +401,4 @@ dist
 
 /generated/prisma
 uploads/
-/src/generated/
+/src/generated
