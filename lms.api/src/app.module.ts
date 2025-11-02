@@ -6,6 +6,7 @@ import { AssetsModule } from 'src/modules/assets/assets.module';
 import { AppAuthModule } from 'src/modules/auth/auth.module';
 import { ClassesModule } from 'src/modules/classes/classes.module';
 import { CurriculumModule } from 'src/modules/curriculum/curriculum.module';
+import { TestsModule } from 'src/modules/tests/tests.module';
 import { UsersModule } from 'src/modules/users/users.module';
 import { validate } from 'src/utils/env.validation';
 
@@ -22,6 +23,7 @@ import { validate } from 'src/utils/env.validation';
     AssetsModule,
     ClassesModule,
     CurriculumModule,
+    TestsModule,
   ],
 })
 export class AppModule {}

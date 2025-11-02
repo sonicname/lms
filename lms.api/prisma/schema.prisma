@@ -27,6 +27,8 @@ model User {
   classesTeaching  Class[]        @relation("TeacherClasses")
   // Class enrollments when this user is a student
   classEnrollments ClassStudent[]
+  tests            Test[]
+  submissions      Submission[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -59,6 +61,11 @@ model Assets {
   user     User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
   lesson   Lesson? @relation(fields: [lessonId], references: [id], onDelete: SetNull)
   lessonId String?
+  test     Test?   @relation(fields: [testId], references: [id], onDelete: SetNull)
+  testId   String?
+
+  submissionId String?
+  submission   Submission? @relation(fields: [submissionId], references: [id], onDelete: SetNull)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -77,6 +84,7 @@ model Class {
   // Many students via explicit join table
   students ClassStudent[]
   chapters Chapter[]
+  tests    Test[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -140,4 +148,44 @@ model Lesson {
   updatedAt DateTime @updatedAt
 
   @@index([chapterId])
+}
+
+model Test {
+  id   String @id @default(uuid())
+  name String
+
+  userCreatedId String
+  userCreated   User   @relation(fields: [userCreatedId], references: [id], onDelete: Cascade)
+
+  classId String
+  class   Class  @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  startDate DateTime?
+  endDate   DateTime?
+
+  assets      Assets[]
+  submissions Submission[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([classId])
+}
+
+model Submission {
+  id String @id @default(uuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  testId String
+  test   Test   @relation(fields: [testId], references: [id], onDelete: Cascade)
+
+  assets Assets[]
+
+  score    Float?
+  feedback String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
