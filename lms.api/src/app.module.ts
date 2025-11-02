@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { AssetsModule } from 'src/modules/assets/assets.module';
 import { AppAuthModule } from 'src/modules/auth/auth.module';
 import { ClassesModule } from 'src/modules/classes/classes.module';
+import { CurriculumModule } from 'src/modules/curriculum/curriculum.module';
 import { UsersModule } from 'src/modules/users/users.module';
 import { validate } from 'src/utils/env.validation';
 
@@ -20,6 +21,7 @@ import { validate } from 'src/utils/env.validation';
     UsersModule,
     AssetsModule,
     ClassesModule,
+    CurriculumModule,
   ],
 })
 export class AppModule {}

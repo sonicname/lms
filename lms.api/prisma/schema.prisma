@@ -56,7 +56,9 @@ model Assets {
   type     String
   userId   String?
 
-  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+  user     User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+  lesson   Lesson? @relation(fields: [lessonId], references: [id], onDelete: SetNull)
+  lessonId String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -74,6 +76,7 @@ model Class {
 
   // Many students via explicit join table
   students ClassStudent[]
+  chapters Chapter[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -100,4 +103,41 @@ model ClassStudent {
 enum EnrollmentStatus {
   pending
   approved
+}
+
+model Chapter {
+  id      String  @id @default(uuid())
+  title   String
+  content String?
+
+  displayOrder Int @default(1)
+
+  classId String
+  class   Class    @relation(fields: [classId], references: [id], onDelete: Cascade)
+  lessons Lesson[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([classId])
+}
+
+model Lesson {
+  id      String  @id @default(uuid())
+  title   String
+  content String?
+
+  displayOrder Int @default(1)
+
+  scheduleDate DateTime?
+
+  chapterId String
+  chapter   Chapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+
+  assets Assets[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([chapterId])
 }
