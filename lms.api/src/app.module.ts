@@ -2,10 +2,12 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'node:path';
+import { AnalyticsModule } from 'src/modules/analytics/analytics.module';
 import { AssetsModule } from 'src/modules/assets/assets.module';
 import { AppAuthModule } from 'src/modules/auth/auth.module';
 import { ClassesModule } from 'src/modules/classes/classes.module';
 import { CurriculumModule } from 'src/modules/curriculum/curriculum.module';
+import { QaModule } from 'src/modules/qa/qa.module';
 import { TestsModule } from 'src/modules/tests/tests.module';
 import { UsersModule } from 'src/modules/users/users.module';
 import { validate } from 'src/utils/env.validation';
@@ -24,6 +26,8 @@ import { validate } from 'src/utils/env.validation';
     ClassesModule,
     CurriculumModule,
     TestsModule,
+    QaModule,
+    AnalyticsModule,
   ],
 })
 export class AppModule {}
