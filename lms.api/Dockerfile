@@ -32,8 +32,15 @@ FROM deps AS build
 COPY nest-cli.json tsconfig.json tsconfig.build.json ./
 COPY src ./src
 
-# Build the app (outputs to dist/)
-RUN pnpm build
+# Generate Prisma Client and build the app (outputs to dist/)
+# Then copy generated client (if using custom output under src/generated) into dist so runtime can resolve it
+# Also copy Prisma engine files into dist/generated/prisma to satisfy runtime resolution.
+RUN pnpm dlx prisma generate \
+  && pnpm build \
+  && mkdir -p dist/generated/prisma \
+  && if [ -d src/generated/prisma ]; then cp -R src/generated/prisma/* dist/generated/prisma/; fi \
+  && if [ -d src/generated ] && [ ! -d src/generated/prisma ]; then cp -R src/generated/* dist/generated/; fi \
+  && if [ -d node_modules/.prisma/client ]; then cp -R node_modules/.prisma/client/* dist/generated/prisma/; fi
 
 # ---------- Production dependencies (no devDeps) ----------
 FROM base AS prod-deps
@@ -42,7 +49,8 @@ COPY package.json pnpm-lock.yaml ./
 COPY prisma ./prisma
 
 # Install production-only dependencies; this also runs Prisma client generate
-RUN pnpm install --frozen-lockfile --prod
+RUN pnpm install --frozen-lockfile --prod \
+  && pnpm dlx prisma generate || true
 
 # ---------- Runner ----------
 FROM base AS runner
