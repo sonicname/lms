@@ -48,6 +48,10 @@ RUN pnpm install --frozen-lockfile --prod
 FROM base AS runner
 ENV NODE_ENV=production
 
+# Ensure writable upload directory exists and is owned by the runtime user
+RUN mkdir -p /app/uploads \
+  && chown -R node:node /app/uploads
+
 # Use the default non-root node user for security
 USER node
 
