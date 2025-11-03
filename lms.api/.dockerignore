@@ -25,6 +25,7 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-# Env files (pass env via docker run or compose)
-.env
-.env.*
+# Env files (uncomment to exclude env files from the build context)
+# If you want .env to be copied into the image, keep these commented out.
+# .env
+# .env.*

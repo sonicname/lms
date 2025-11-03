@@ -55,6 +55,9 @@ USER node
 COPY --chown=node:node --from=prod-deps /app/node_modules ./node_modules
 COPY --chown=node:node --from=build /app/dist ./dist
 COPY --chown=node:node package.json ./package.json
+## Copy environment file(s) if present
+# Note: ensure .env is not excluded by .dockerignore when you need it in the image
+COPY --chown=node:node .env ./.env
 
 # If you serve static content via @nestjs/serve-static, ensure those assets are in dist
 # EXPOSE the port your app listens on (Nest defaults to 3000 if not configured otherwise)
