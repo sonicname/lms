@@ -24,7 +24,7 @@ export default function AuthForm<Values extends CommonRecord>(
   });
 
   return (
-    <form onSubmit={form.onSubmit(props.handleSubmit)}>
+    <form autoComplete='off' onSubmit={form.onSubmit(props.handleSubmit)}>
       {props.children(form)}
     </form>
   );

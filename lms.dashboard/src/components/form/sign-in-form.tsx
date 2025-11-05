@@ -1,4 +1,4 @@
-import { Button, Flex, TextInput } from '@mantine/core';
+import { Button, Flex, Text, TextInput } from '@mantine/core';
 import appEnv from 'app-env';
 import AuthForm from './auth-form';
 
@@ -40,12 +40,13 @@ export default function SignInForm() {
     >
       {(form) => (
         <Flex direction='column' gap='md'>
+          <Text size='md'>Sign In to Your Account</Text>
+
           <TextInput
             type='email'
             placeholder='Email'
             withAsterisk
             label='Email'
-            autoComplete='off'
             {...form.getInputProps('email')}
           />
           <TextInput
