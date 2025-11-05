@@ -23,10 +23,27 @@ async function bootstrap() {
     .setTitle('Lms API')
     .setDescription('The Lms API description')
     .setVersion('1.0')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        description:
+          'JWT Authorization header using the Bearer scheme. Example: "Authorization: Bearer {token}"',
+        in: 'header',
+      },
+      'bearer',
+    )
+    // Apply bearer auth to all operations by default
+    .addSecurityRequirements('bearer')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api-docs', app, document);
+  SwaggerModule.setup('api-docs', app, document, {
+    swaggerOptions: {
+      persistAuthorization: true,
+    },
+  });
 
   app.use(
     '/reference',
