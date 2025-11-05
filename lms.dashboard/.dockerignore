@@ -1,0 +1,24 @@
+# Dependencies and build artifacts
+node_modules
+dist
+.pnpm-store
+
+# VCS
+.git
+.gitignore
+
+# IDE/editor
+.vscode
+.idea
+
+# Env and logs
+.env
+.env.*
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Docker and misc
+Dockerfile
+docker-compose.yml
