@@ -1,5 +1,6 @@
 import { createElement } from 'react';
 import { createBrowserRouter, Outlet } from 'react-router-dom';
+import Homepage from '../../components/homepage';
 import buildGlobRoutes, { type GlobModules } from './route-builder';
 
 // Match both legacy /src/pages and module-based pages under /src/modules/<module>/pages
@@ -19,6 +20,11 @@ const router = createBrowserRouter([
     path: '/',
     children: tree,
     errorElement: createElement(Outlet),
+  },
+  {
+    path: '/',
+    element: createElement(Homepage),
+    index: true,
   },
 ]);
 

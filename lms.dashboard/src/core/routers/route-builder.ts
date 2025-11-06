@@ -182,7 +182,6 @@ function collectLayouts(
     }
   });
 
-  console.log('All collected layout keys:', Array.from(layoutRoutes.keys()));
   return layoutRoutes;
 }
 
