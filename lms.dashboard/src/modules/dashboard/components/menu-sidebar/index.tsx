@@ -15,15 +15,15 @@ const sidebarMenuItems = [
     icon: LuCircleUserRound,
     initiallyOpened: true,
     links: [
-      { label: 'Danh sách tài khoản', link: '/accounts' },
-      { label: 'Tài khoản bị khoá', link: '/accounts/blocked' },
+      { label: 'Danh sách tài khoản', link: '/dashboard/accounts' },
+      { label: 'Tài khoản bị khoá', link: '/dashboard/accounts/blocked' },
       {
         label: 'Danh sách giáo viên',
-        link: '/accounts/teachers',
+        link: '/dashboard/accounts/teachers',
       },
       {
         label: 'Danh sách học sinh',
-        link: '/accounts/students',
+        link: '/dashboard/accounts/students',
       },
     ],
   },
@@ -31,8 +31,8 @@ const sidebarMenuItems = [
     label: 'Lớp học',
     icon: MdOutlineClass,
     links: [
-      { label: 'Danh sách lớp học', link: '/classes' },
-      { label: 'Thêm lớp học', link: '/classes/create' },
+      { label: 'Danh sách lớp học', link: '/dashboard/classes' },
+      { label: 'Thêm lớp học', link: '/dashboard/classes/create' },
     ],
   },
   {
@@ -41,11 +41,11 @@ const sidebarMenuItems = [
     links: [
       {
         label: 'Danh sách nội dung',
-        link: '/contents',
+        link: '/dashboard/contents',
       },
       {
         label: 'Thêm nội dung',
-        link: '/contents/create',
+        link: '/dashboard/contents/create',
       },
     ],
   },

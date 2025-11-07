@@ -9,6 +9,7 @@ import {
 } from '@mantine/core';
 import { useState } from 'react';
 import { TbChevronRight } from 'react-icons/tb';
+import { useNavigate } from 'react-router-dom';
 import classes from './navbar-links-group.module.css';
 
 interface LinksGroupProps {
@@ -24,15 +25,18 @@ export function LinksGroup({
   initiallyOpened,
   links,
 }: LinksGroupProps) {
+  const navigate = useNavigate();
+
   const hasLinks = Array.isArray(links);
   const [opened, setOpened] = useState(initiallyOpened || false);
   const items = (hasLinks ? links : []).map((link) => (
     <Text<'a'>
       component='a'
       className={classes.link}
-      href={link.link}
       key={link.label}
-      onClick={(event) => event.preventDefault()}
+      onClick={() => {
+        navigate(link.link);
+      }}
     >
       {link.label}
     </Text>
