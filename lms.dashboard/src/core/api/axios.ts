@@ -6,8 +6,9 @@ import axios, {
   type InternalAxiosRequestConfig,
 } from 'axios';
 
-// Optional localStorage key if you also want to mirror access token in JS-land
+// Local storage keys for tokens (client-managed)
 const ACCESS_TOKEN_STORAGE_KEY = 'access_token';
+const REFRESH_TOKEN_STORAGE_KEY = 'refresh_token';
 
 type RetriableRequestConfig = InternalAxiosRequestConfig & {
   _retry?: boolean;
@@ -20,7 +21,8 @@ class Api {
   private refreshSubscribers: Array<(token?: string) => void> = [];
 
   constructor(config: CreateAxiosDefaults) {
-    this.instance = axios.create({ withCredentials: true, ...config });
+    // Don't use cookies; rely on Authorization header and refresh token body
+    this.instance = axios.create({ ...config });
 
     this.setupInterceptors();
   }
@@ -28,10 +30,7 @@ class Api {
   setupInterceptors() {
     this.instance.interceptors.request.use(
       (config) => {
-        // Always send cookies for session-based auth
-        config.withCredentials = config.withCredentials ?? true;
-
-        // If you prefer also sending Authorization header (when stored), attach it
+        // Attach Authorization header if access token is stored
         try {
           const token =
             typeof window !== 'undefined'
@@ -141,8 +140,8 @@ class Api {
     this.refreshSubscribers.push(cb);
   }
 
-  // Performs refresh by calling the API endpoint, deduping concurrent calls.
-  // Returns the new access token if the API returns one, or void if cookies-only auth.
+  // Performs refresh by calling the API endpoint with refreshToken from localStorage.
+  // Dedupes concurrent calls. Returns the new access token string if available.
   private async refreshToken(): Promise<string | void> {
     if (this.isRefreshing && this.refreshPromise) {
       // Another refresh in-flight – wait for it and then continue
@@ -154,16 +153,28 @@ class Api {
 
     this.isRefreshing = true;
 
-    // Use a bare axios client to avoid interceptor recursion
-    const client = axios.create({
-      baseURL: this.instance.defaults.baseURL,
-      withCredentials: true,
-    });
+    // Read refresh token from storage
+    const refreshToken =
+      typeof window !== 'undefined'
+        ? window.localStorage.getItem(REFRESH_TOKEN_STORAGE_KEY)
+        : null;
+
+    if (!refreshToken) {
+      // No refresh token available -> cannot refresh
+      this.isRefreshing = false;
+      this.refreshPromise = null;
+      this.notifyRefreshed(undefined);
+      return Promise.reject(new Error('Missing refresh token'));
+    }
+
+    // Use a bare axios client to avoid interceptor recursion and cookie usage
+    const client = axios.create({ baseURL: this.instance.defaults.baseURL });
 
     this.refreshPromise = client
-      .post('/auth/refresh-token', {})
+      .post('/auth/refresh-token', { refreshToken })
       .then((res) => {
         const token: string | undefined = res?.data?.tokens?.accessToken;
+        const newRefresh: string | undefined = res?.data?.tokens?.refreshToken;
 
         // Mirror token in localStorage if available for Authorization header usage
         if (token && typeof window !== 'undefined') {
@@ -171,6 +182,14 @@ class Api {
             window.localStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, token);
           } catch {
             // ignore storage issues
+            void 0;
+          }
+        }
+        // Rotate stored refresh token as well
+        if (newRefresh && typeof window !== 'undefined') {
+          try {
+            window.localStorage.setItem(REFRESH_TOKEN_STORAGE_KEY, newRefresh);
+          } catch {
             void 0;
           }
         }
@@ -183,6 +202,11 @@ class Api {
         if (typeof window !== 'undefined') {
           try {
             window.localStorage.removeItem(ACCESS_TOKEN_STORAGE_KEY);
+          } catch {
+            void 0;
+          }
+          try {
+            window.localStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY);
           } catch {
             void 0;
           }
