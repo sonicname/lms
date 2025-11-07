@@ -13,7 +13,7 @@ export default function DashboardLayout() {
     <div className='w-full h-screen overflow-hidden flex'>
       <MenuSidebar />
 
-      <div className='flex-1'>
+      <div className='flex-1 p-4'>
         <Outlet />
       </div>
     </div>
