@@ -1,6 +1,12 @@
-import { Code, Group, ScrollArea } from '@mantine/core';
-import { LuBookOpen, LuCircleUserRound, LuFileArchive } from 'react-icons/lu';
+import { Button, Code, Group, ScrollArea } from '@mantine/core';
+import {
+  LuBookOpen,
+  LuCircleUserRound,
+  LuFileArchive,
+  LuLogOut,
+} from 'react-icons/lu';
 import { MdOutlineClass } from 'react-icons/md';
+import { getAuthStore } from '../../../auth/stores/auth-store';
 import { LinksGroup } from '../navbar-links-group';
 import classes from './menu-sidebar.module.css';
 
@@ -52,6 +58,8 @@ const sidebarMenuItems = [
 ];
 
 export default function MenuSidebar() {
+  const { clearAuth } = getAuthStore();
+
   const links = sidebarMenuItems.map((item) => (
     <LinksGroup {...item} key={item.label} />
   ));
@@ -70,8 +78,18 @@ export default function MenuSidebar() {
       </ScrollArea>
 
       <div className={classes.footer}>
-        <div className='flex items-center justify-center'>
-          <Code fw={700}>© {new Date().getFullYear()} LMS Education</Code>
+        <div className='flex w-full justify-center p-2'>
+          <Button
+            className='w-full'
+            variant='subtle'
+            color='red'
+            leftSection={<LuLogOut />}
+            onClick={() => {
+              clearAuth();
+            }}
+          >
+            Đăng xuất
+          </Button>
         </div>
       </div>
     </nav>

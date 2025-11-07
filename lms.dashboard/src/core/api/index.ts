@@ -4,6 +4,7 @@ import Api from './axios.ts';
 // Shared API instance for the dashboard
 const api = new Api({
   baseURL: appEnv.apiUrl,
+  adapter: 'http',
 });
 
 export default api;

@@ -1,3 +1,4 @@
+import { notifications } from '@mantine/notifications';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
@@ -20,9 +21,11 @@ export interface AuthStore {
 
   user?: User;
   setUser: (user?: User) => void;
+
+  clearAuth: () => void;
 }
 
-export const authStore = create<AuthStore>()(
+export const useAuthStore = create<AuthStore>()(
   persist(
     (set, get) => ({
       accessToken: undefined,
@@ -35,6 +38,20 @@ export const authStore = create<AuthStore>()(
       },
       user: undefined,
       setUser: (user?: User) => set({ user }),
+
+      clearAuth: () => {
+        notifications.show({
+          title: 'Logged out',
+          message: 'Bạn đã đăng xuất thành công.',
+          color: 'green',
+        });
+
+        set({
+          accessToken: undefined,
+          refreshToken: undefined,
+          user: undefined,
+        });
+      },
     }),
     {
       name: 'auth-store',
@@ -43,4 +60,4 @@ export const authStore = create<AuthStore>()(
   ),
 );
 
-export const getAuthStore = () => authStore.getState();
+export const getAuthStore = () => useAuthStore.getState();

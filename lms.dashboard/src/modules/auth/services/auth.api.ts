@@ -4,9 +4,6 @@ import axios, { type AxiosResponse } from 'axios';
 import api from '../../../core/api/index.ts';
 import { getAuthStore } from '../stores/auth-store.ts';
 
-export const ACCESS_TOKEN_STORAGE_KEY = 'access_token';
-export const REFRESH_TOKEN_STORAGE_KEY = 'refresh_token';
-
 export type PublicUser = {
   id: string;
   email: string;
@@ -61,10 +58,7 @@ export async function signIn(payload: SignInDto): Promise<AuthResponse> {
 }
 
 export async function refreshAuth(): Promise<AuthResponse> {
-  const refreshToken =
-    typeof window !== 'undefined'
-      ? window.localStorage.getItem(REFRESH_TOKEN_STORAGE_KEY)
-      : null;
+  const refreshToken = getAuthStore().refreshToken;
   if (!refreshToken) throw new Error('Missing refresh token');
 
   const data = await api.post<AuthResponse, { refreshToken: string }>(
