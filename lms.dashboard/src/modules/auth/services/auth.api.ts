@@ -2,6 +2,7 @@
 import appEnv from 'app-env';
 import axios, { type AxiosResponse } from 'axios';
 import api from '../../../core/api/index.ts';
+import { getAuthStore } from '../stores/auth-store.ts';
 
 export const ACCESS_TOKEN_STORAGE_KEY = 'access_token';
 export const REFRESH_TOKEN_STORAGE_KEY = 'refresh_token';
@@ -11,8 +12,8 @@ export type PublicUser = {
   email: string;
   name?: string | null;
   image?: string | null;
-  createdAt: string | Date;
-  updatedAt: string | Date;
+  createdAt: string;
+  updatedAt: string;
 };
 
 export type Tokens = {
@@ -43,22 +44,19 @@ export async function signIn(payload: SignInDto): Promise<AuthResponse> {
   // Mirror access token so Authorization header attaches for subsequent calls
   const data = signInResponse.data;
 
-  try {
-    if (data?.tokens?.accessToken && typeof window !== 'undefined') {
-      window.localStorage.setItem(
-        ACCESS_TOKEN_STORAGE_KEY,
-        data.tokens.accessToken,
-      );
-    }
-    if (data?.tokens?.refreshToken && typeof window !== 'undefined') {
-      window.localStorage.setItem(
-        REFRESH_TOKEN_STORAGE_KEY,
-        data.tokens.refreshToken,
-      );
-    }
-  } catch {
-    // ignore storage issues
-  }
+  const authStore = getAuthStore();
+
+  authStore.setAccessToken(data.tokens.accessToken);
+  authStore.setRefreshToken(data.tokens.refreshToken);
+  authStore.setUser({
+    createdAt: data.user.createdAt,
+    updatedAt: data.user.updatedAt,
+    email: data.user.email,
+    id: data.user.id,
+    image: data.user.image || '',
+    name: data.user.name || '',
+  });
+
   return data;
 }
 
@@ -73,22 +71,8 @@ export async function refreshAuth(): Promise<AuthResponse> {
     '/auth/refresh-token',
     { refreshToken },
   );
-  try {
-    if (data?.tokens?.accessToken && typeof window !== 'undefined') {
-      window.localStorage.setItem(
-        ACCESS_TOKEN_STORAGE_KEY,
-        data.tokens.accessToken,
-      );
-    }
-    if (data?.tokens?.refreshToken && typeof window !== 'undefined') {
-      window.localStorage.setItem(
-        REFRESH_TOKEN_STORAGE_KEY,
-        data.tokens.refreshToken,
-      );
-    }
-  } catch {
-    // ignore storage issues
-  }
+  getAuthStore().setAccessToken(data.tokens.accessToken);
+  getAuthStore().setRefreshToken(data.tokens.refreshToken);
   return data;
 }
 
@@ -112,21 +96,12 @@ export async function isLoggedIn(): Promise<{
 
 export async function logout(): Promise<void> {
   try {
-    const refreshToken =
-      typeof window !== 'undefined'
-        ? window.localStorage.getItem(REFRESH_TOKEN_STORAGE_KEY)
-        : null;
+    const refreshToken = getAuthStore().refreshToken;
     await api.post('/auth/revoke-token', refreshToken ? { refreshToken } : {});
   } catch {
     // ignore errors
   } finally {
-    try {
-      if (typeof window !== 'undefined') {
-        window.localStorage.removeItem(ACCESS_TOKEN_STORAGE_KEY);
-        window.localStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY);
-      }
-    } catch {
-      // ignore storage issues
-    }
+    getAuthStore().setAccessToken(undefined);
+    getAuthStore().setRefreshToken(undefined);
   }
 }

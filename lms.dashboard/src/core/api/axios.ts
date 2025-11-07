@@ -5,10 +5,7 @@ import axios, {
   type CreateAxiosDefaults,
   type InternalAxiosRequestConfig,
 } from 'axios';
-
-// Local storage keys for tokens (client-managed)
-const ACCESS_TOKEN_STORAGE_KEY = 'access_token';
-const REFRESH_TOKEN_STORAGE_KEY = 'refresh_token';
+import { getAuthStore } from '../../modules/auth/stores/auth-store';
 
 type RetriableRequestConfig = InternalAxiosRequestConfig & {
   _retry?: boolean;
@@ -32,10 +29,7 @@ class Api {
       (config) => {
         // Attach Authorization header if access token is stored
         try {
-          const token =
-            typeof window !== 'undefined'
-              ? window.localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY)
-              : null;
+          const token = getAuthStore().accessToken;
           if (token) {
             config.headers = config.headers ?? {};
             (config.headers as Record<string, string>)[
@@ -154,10 +148,7 @@ class Api {
     this.isRefreshing = true;
 
     // Read refresh token from storage
-    const refreshToken =
-      typeof window !== 'undefined'
-        ? window.localStorage.getItem(REFRESH_TOKEN_STORAGE_KEY)
-        : null;
+    const refreshToken = getAuthStore().refreshToken;
 
     if (!refreshToken) {
       // No refresh token available -> cannot refresh
@@ -177,21 +168,12 @@ class Api {
         const newRefresh: string | undefined = res?.data?.tokens?.refreshToken;
 
         // Mirror token in localStorage if available for Authorization header usage
-        if (token && typeof window !== 'undefined') {
-          try {
-            window.localStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, token);
-          } catch {
-            // ignore storage issues
-            void 0;
-          }
+        if (token) {
+          getAuthStore().setAccessToken(token);
         }
         // Rotate stored refresh token as well
-        if (newRefresh && typeof window !== 'undefined') {
-          try {
-            window.localStorage.setItem(REFRESH_TOKEN_STORAGE_KEY, newRefresh);
-          } catch {
-            void 0;
-          }
+        if (newRefresh) {
+          getAuthStore().setRefreshToken(newRefresh);
         }
 
         this.notifyRefreshed(token);
@@ -199,18 +181,8 @@ class Api {
       })
       .catch((err) => {
         // Clear any mirrored token on failure
-        if (typeof window !== 'undefined') {
-          try {
-            window.localStorage.removeItem(ACCESS_TOKEN_STORAGE_KEY);
-          } catch {
-            void 0;
-          }
-          try {
-            window.localStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY);
-          } catch {
-            void 0;
-          }
-        }
+        getAuthStore().setAccessToken(undefined);
+        getAuthStore().setRefreshToken(undefined);
         // Also notify waiting subscribers so they can fail-fast
         this.notifyRefreshed(undefined);
         throw err;

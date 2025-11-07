@@ -24,7 +24,7 @@ export default function SignInForm() {
           });
           // At this point, cookies and access token mirror are set. Navigate in.
           console.log('Sign in successful:', data?.user?.email);
-          navigate('/');
+          navigate('/dashboard');
         } catch (error) {
           console.error('Error during sign in:', error);
 
