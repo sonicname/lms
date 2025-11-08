@@ -29,6 +29,11 @@ export const classesApi = {
     api.post<any>(`${basePrefix}/${classId}/students/${studentId}/reject`),
   kickStudent: (classId: string, studentId: string) =>
     api.delete<any>(`${basePrefix}/${classId}/students/${studentId}`),
+  addStudent: (classId: string, payload: { studentId: string }) =>
+    api.post<any, { studentId: string }>(
+      `${basePrefix}/${classId}/students`,
+      payload,
+    ),
   listStudents: (
     classId: string,
     params?: { page?: number; limit?: number; status?: 'pending' | 'approved' },

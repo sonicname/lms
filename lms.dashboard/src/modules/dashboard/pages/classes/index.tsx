@@ -15,16 +15,13 @@ import { notifications } from '@mantine/notifications';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import { LuEye, LuPencil, LuTrash2 } from 'react-icons/lu';
+import { useNavigate } from 'react-router-dom';
 import SkeletonCard from '../../../../components/skeleton-card';
 import ClassCreateForm from '../../../classes/components/class-create-form';
 import ClassDeleteModal from '../../../classes/components/class-delete-modal';
-import ClassDetailsDrawer from '../../../classes/components/class-details-drawer';
 import ClassEditDrawer from '../../../classes/components/class-edit-drawer';
 import { ClassesQueryKey } from '../../../classes/constants/classes-query-key';
-import type {
-  ClassDetailModel,
-  ClassModel,
-} from '../../../classes/models/class.model';
+import type { ClassModel } from '../../../classes/models/class.model';
 import { classesApi } from '../../../classes/services/classes.api';
 
 export default function ClassesManagerPage() {
@@ -32,18 +29,16 @@ export default function ClassesManagerPage() {
     useDisclosure(false);
   const [editOpened, { open: openEdit, close: closeEdit }] =
     useDisclosure(false);
-  const [viewOpened, { open: openView, close: closeView }] =
-    useDisclosure(false);
   const [deleteOpened, { open: openDelete, close: closeDelete }] =
     useDisclosure(false);
 
   const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
   const [editingClass, setEditingClass] = useState<ClassModel | null>(null);
-  const [viewData, setViewData] = useState<ClassDetailModel | null>(null);
   const [page, setPage] = useState<number>(1);
   const [search, setSearch] = useState<string>('');
 
   const qc = useQueryClient();
+  const navigate = useNavigate();
 
   const { data, isLoading } = useQuery({
     queryKey: ClassesQueryKey.list({ page, search }),
@@ -97,23 +92,6 @@ export default function ClassesManagerPage() {
     },
   });
 
-  const detailQuery = useQuery({
-    enabled: !!selectedClassId && viewOpened,
-    queryKey: selectedClassId
-      ? ClassesQueryKey.detail(selectedClassId)
-      : ['classes', 'detail', 'none'],
-    queryFn: async () => {
-      if (!selectedClassId) return null;
-      const res = await classesApi.getOne(selectedClassId);
-      return res;
-    },
-  });
-
-  // sync detailed data into viewData
-  if (detailQuery.data && viewData?.id !== detailQuery.data.id) {
-    setViewData(detailQuery.data);
-  }
-
   const rows = useMemo(
     () =>
       listData.map((c: ClassModel) => (
@@ -134,8 +112,7 @@ export default function ClassesManagerPage() {
                   variant='subtle'
                   color='blue'
                   onClick={() => {
-                    setSelectedClassId(c.id);
-                    openView();
+                    navigate(`/dashboard/classes/${c.id}`);
                   }}
                 >
                   <LuEye />
@@ -169,7 +146,7 @@ export default function ClassesManagerPage() {
           </Table.Td>
         </Table.Tr>
       )),
-    [listData, openView, openEdit, openDelete],
+    [listData, navigate, openEdit, openDelete],
   );
 
   if (isLoading) return <SkeletonCard isFullHeight lines={8} />;
@@ -252,16 +229,6 @@ export default function ClassesManagerPage() {
         onSubmit={(values) => {
           if (!editingClass?.id) return;
           updateMutation.mutate({ id: editingClass.id, values });
-        }}
-      />
-
-      <ClassDetailsDrawer
-        opened={viewOpened}
-        data={viewData || (detailQuery.data ?? null)}
-        onClose={() => {
-          closeView();
-          setSelectedClassId(null);
-          setViewData(null);
         }}
       />
 

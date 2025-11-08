@@ -1,7 +1,12 @@
-import { Button, Group, Stack, TextInput } from '@mantine/core';
+import { Autocomplete, Button, Group, Stack, TextInput } from '@mantine/core';
 import { useForm } from '@mantine/form';
+import { useDebouncedValue } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
+import { UsersQueryKey } from '../../accounts/constants/users-query-key';
+import type { UserModel } from '../../accounts/models/user.model';
+import { accountApi } from '../../accounts/services/account.api';
 import { ClassesQueryKey } from '../constants/classes-query-key';
 import type { CreateClassModel } from '../models/create-class.model';
 import { classesApi } from '../services/classes.api';
@@ -13,7 +18,12 @@ export type ClassCreateFormProps = {
 export default function ClassCreateForm({ onCreated }: ClassCreateFormProps) {
   const qc = useQueryClient();
   const form = useForm<CreateClassModel>({
-    initialValues: { name: '', code: '', description: '' },
+    initialValues: {
+      name: '',
+      code: '',
+      description: '',
+      teacherId: undefined,
+    },
     validate: {
       name: (v) =>
         !v ? 'Tên bắt buộc' : v.length > 100 ? 'Tối đa 100 ký tự' : null,
@@ -23,6 +33,29 @@ export default function ClassCreateForm({ onCreated }: ClassCreateFormProps) {
         v && v.length > 500 ? 'Mô tả tối đa 500 ký tự' : null,
     },
   });
+
+  // Teacher autocomplete
+  const [teacherText, setTeacherText] = useState('');
+  const [debouncedTeacher] = useDebouncedValue(teacherText, 300);
+
+  const teachersQuery = useQuery({
+    queryKey: [
+      ...UsersQueryKey.lists(),
+      { role: 'teacher', search: debouncedTeacher },
+    ],
+    queryFn: async () =>
+      accountApi.listUsers({
+        role: 'teacher',
+        search: debouncedTeacher,
+        limit: 10,
+      }),
+  });
+
+  const teacherList = (teachersQuery.data?.data ?? []) as UserModel[];
+  const teacherOptions = teacherList.map((u) => ({
+    label: u.name ? `${u.name} (${u.email})` : u.email,
+    id: u.id,
+  }));
 
   const createMutation = useMutation({
     mutationFn: async (payload: CreateClassModel) => classesApi.create(payload),
@@ -60,6 +93,28 @@ export default function ClassCreateForm({ onCreated }: ClassCreateFormProps) {
           {...form.getInputProps('code')}
         />
         <TextInput label='Mô tả' {...form.getInputProps('description')} />
+        <Autocomplete
+          label='Giáo viên (Admin)'
+          description='Chỉ Admin có thể gán giáo viên khi tạo lớp'
+          placeholder='Nhập tên hoặc email giáo viên'
+          data={teacherOptions.map((o) => o.label)}
+          value={teacherText}
+          onChange={(val) => {
+            setTeacherText(val);
+            const match = teacherOptions.find((o) => o.label === val);
+            form.setFieldValue('teacherId', match?.id);
+          }}
+          onOptionSubmit={(val) => {
+            setTeacherText(val);
+            const match = teacherOptions.find((o) => o.label === val);
+            form.setFieldValue('teacherId', match?.id);
+          }}
+          rightSection={
+            teachersQuery.isLoading ? (
+              <span style={{ fontSize: 12 }}>Đang tìm...</span>
+            ) : undefined
+          }
+        />
         <Group justify='flex-end'>
           <Button type='submit' loading={createMutation.status === 'pending'}>
             Tạo

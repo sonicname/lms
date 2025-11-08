@@ -176,6 +176,8 @@ function collectLayouts(
       }
 
       if (layoutKey !== undefined) {
+        // Normalize dynamic bracket segments to colon parameters for layout matching
+        layoutKey = layoutKey.replace(/\[(.+?)\]/g, ':$1');
         const Layout = lazy(MODULES[route]);
         layoutRoutes.set(layoutKey, Layout);
       }
@@ -221,7 +223,9 @@ function getParentKey(key: string): string | null {
 function getLastSegment(key: string): string {
   if (key === '') return '';
   const pos = key.lastIndexOf('/');
-  return pos === -1 ? key : key.slice(pos + 1);
+  const seg = pos === -1 ? key : key.slice(pos + 1);
+  const dyn = seg.match(/^\[(.+?)\]$/);
+  return dyn ? `:${dyn[1]}` : seg;
 }
 
 function suspenseWrap(

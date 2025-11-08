@@ -34,14 +34,22 @@ export default function ClassEditDrawer({
   });
 
   useEffect(() => {
-    if (classData) {
-      form.setValues({
-        name: classData.name ?? '',
-        code: classData.code ?? '',
-        description: classData.description ?? '',
-      });
+    if (!classData) return;
+    const next: UpdateClassModel = {
+      name: classData.name ?? '',
+      code: classData.code ?? '',
+      description: classData.description ?? '',
+    };
+    const curr = form.getValues();
+    if (
+      (curr.name ?? '') !== next.name ||
+      (curr.code ?? '') !== next.code ||
+      (curr.description ?? '') !== (next.description ?? '')
+    ) {
+      form.setValues(next);
     }
-  }, [classData, form]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [classData]);
 
   return (
     <Drawer
