@@ -16,6 +16,8 @@ import { Roles } from 'src/modules/auth/constants/roles.decorator';
 import { Role } from 'src/modules/auth/constants/roles.enum';
 import { JwtCookieAuthGuard } from 'src/modules/auth/guards/jwt-cookie.guard';
 import { RolesGuard } from 'src/modules/auth/guards/roles.guard';
+import { AssignTeacherDocs } from 'src/modules/classes/docs/assign-teacher.docs';
+import { AssignTeacherDto } from 'src/modules/classes/dtos/assign-teacher.dto';
 import { ClassesService } from './classes.service';
 import { AddStudentDocs } from './docs/add-student.docs';
 import { ApproveStudentDocs } from './docs/approve-student.docs';
@@ -111,6 +113,26 @@ export class ClassesController {
     const actorId = req.user!.id;
     const actorRole = (await this.getRoleFromRequest(req)) as Role;
     return this.classesService.updateClass(actorId, actorRole, id, dto);
+  }
+
+  // Admin: assign/change teacher for a class
+  @Patch(':id/assign-teacher')
+  @UseGuards(RolesGuard)
+  @Roles(Role.Admin)
+  @AssignTeacherDocs()
+  async assignTeacher(
+    @Req() req: Request & { user?: { id: string } },
+    @Param('id') id: string,
+    @Body() dto: AssignTeacherDto,
+  ) {
+    const actorId = req.user!.id;
+    const actorRole = (await this.getRoleFromRequest(req)) as Role;
+    return this.classesService.assignTeacher(
+      actorId,
+      actorRole,
+      id,
+      dto.teacherId,
+    );
   }
 
   // Delete class

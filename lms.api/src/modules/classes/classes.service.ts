@@ -118,6 +118,39 @@ export class ClassesService {
     }
   }
 
+  async assignTeacher(
+    actorId: string,
+    actorRole: Role,
+    classId: string,
+    teacherId: string,
+  ) {
+    if (actorRole !== Role.Admin) {
+      throw new ForbiddenException('Only admin can assign teacher');
+    }
+    const cls = await this.prisma.class.findUnique({ where: { id: classId } });
+    if (!cls) throw new NotFoundException('Class not found');
+    const teacher = await this.prisma.user.findUnique({
+      where: { id: teacherId },
+      select: { id: true, role: true },
+    });
+    if (!teacher) throw new NotFoundException('Teacher not found');
+    if (teacher.role !== Role.Teacher)
+      throw new ForbiddenException('Assigned user is not a teacher');
+    return this.prisma.class.update({
+      where: { id: classId },
+      data: { teacherId },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        code: true,
+        teacherId: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+  }
+
   async deleteClass(actorId: string, actorRole: Role, id: string) {
     const cls = await this.prisma.class.findUnique({ where: { id } });
     if (!cls) throw new NotFoundException('Class not found');
