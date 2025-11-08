@@ -6,21 +6,20 @@ import {
   Drawer,
   Flex,
   Group,
-  Modal,
   Pagination,
-  Select,
   Table,
   Text,
-  TextInput,
   Tooltip,
 } from '@mantine/core';
-import { useForm } from '@mantine/form';
 import { useDisclosure } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { LuEye, LuPencil, LuTrash2 } from 'react-icons/lu';
 import SkeletonCard from '../../../../components/skeleton-card';
+import AccountDeleteModal from '../../../accounts/components/account-delete-modal';
+import AccountDetailsDrawer from '../../../accounts/components/account-details-drawer';
+import AccountEditDrawer from '../../../accounts/components/account-edit-drawer';
 import { UsersQueryKey } from '../../../accounts/constants/users-query-key';
 import { useUsersFilter } from '../../../accounts/hooks/use-users-filter';
 import type { UserModel } from '../../../accounts/models/user.model';
@@ -64,9 +63,12 @@ export default function AccountManagerPage() {
     useDisclosure(false);
   const [editOpened, { open: openEdit, close: closeEdit }] =
     useDisclosure(false);
+  const [viewOpened, { open: openView, close: closeView }] =
+    useDisclosure(false);
   const [editingUser, setEditingUser] = useState<ReturnType<
     typeof mapUserModel
   > | null>(null);
+  const [viewedUser, setViewedUser] = useState<UserModel | null>(null);
   const qc = useQueryClient();
 
   const { data, isLoading } = useQuery({
@@ -98,34 +100,7 @@ export default function AccountManagerPage() {
   const users = useMemo(() => data?.data ?? [], [data]);
   const meta = data?.meta ?? { page: 1, limit: 10, total: 0, totalPages: 1 };
 
-  const editForm = useForm<EditFormValues>({
-    initialValues: { email: '', name: '', image: '', role: 'student' },
-    validate: {
-      email: (v: string) =>
-        !v || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)
-          ? 'Email không hợp lệ'
-          : null,
-      name: (v: string) => (v && v.length > 50 ? 'Tên tối đa 50 ký tự' : null),
-      image: (v: string) =>
-        v && !/^https?:\/\//.test(v) ? 'Image phải là URL' : null,
-      role: (v: string) =>
-        v && ['admin', 'teacher', 'student'].includes(v)
-          ? null
-          : 'Vai trò không hợp lệ',
-    },
-  });
-
-  useEffect(() => {
-    if (editingUser) {
-      editForm.setValues({
-        email: editingUser.email || '',
-        name: editingUser.name || '',
-        image: editingUser.image || '',
-        role: editingUser.role,
-      });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editingUser]);
+  // edit form moved into component
 
   const updateMutation = useMutation({
     mutationFn: async (vars: { id: string; values: Partial<EditFormValues> }) =>
@@ -192,7 +167,8 @@ export default function AccountManagerPage() {
                   variant='subtle'
                   color='blue'
                   onClick={() => {
-                    /* navigate to details */
+                    setViewedUser(u);
+                    openView();
                   }}
                 >
                   <LuEye />
@@ -226,7 +202,7 @@ export default function AccountManagerPage() {
           </Table.Td>
         </Table.Tr>
       )),
-    [users, open, openEdit],
+    [users, open, openEdit, openView],
   );
 
   if (isLoading) {
@@ -277,78 +253,36 @@ export default function AccountManagerPage() {
         />
       </Group>
 
-      <Modal opened={opened} onClose={close} title='Xác nhận xoá' centered>
-        <Text mb='md'>
-          Bạn có chắc muốn xoá tài khoản này? Hành động này không thể hoàn tác.
-        </Text>
-        <Group justify='flex-end'>
-          <Button variant='default' onClick={close}>
-            Huỷ
-          </Button>
-          <Button
-            color='red'
-            onClick={() => selectedId && deleteMutation.mutate(selectedId)}
-            loading={deleteMutation.status === 'pending'}
-          >
-            Xoá
-          </Button>
-        </Group>
-      </Modal>
+      <AccountDeleteModal
+        opened={opened}
+        loading={deleteMutation.status === 'pending'}
+        onClose={close}
+        onConfirm={() => selectedId && deleteMutation.mutate(selectedId)}
+      />
 
-      <Drawer
+      <AccountEditDrawer
         opened={editOpened}
-        onClose={closeEdit}
-        title='Chỉnh sửa tài khoản'
-        position='right'
-        size='md'
-      >
-        <form
-          onSubmit={editForm.onSubmit((values) => {
-            if (!editingUser?.id) return;
-            updateMutation.mutate({ id: editingUser.id, values });
-          })}
-        >
-          <Group gap='md' grow>
-            <TextInput
-              label='Email'
-              placeholder='name@example.com'
-              withAsterisk
-              {...editForm.getInputProps('email')}
-            />
-            <TextInput
-              label='Tên'
-              placeholder='Tên hiển thị'
-              {...editForm.getInputProps('name')}
-            />
-          </Group>
-          <Group gap='md' grow mt='md'>
-            <TextInput
-              label='Ảnh (URL)'
-              placeholder='https://...'
-              {...editForm.getInputProps('image')}
-            />
-            <Select
-              label='Vai trò'
-              withAsterisk
-              data={[
-                { value: 'admin', label: 'Admin' },
-                { value: 'teacher', label: 'Giáo viên' },
-                { value: 'student', label: 'Học viên' },
-              ]}
-              {...editForm.getInputProps('role')}
-            />
-          </Group>
-
-          <Group justify='flex-end' mt='lg'>
-            <Button variant='default' onClick={closeEdit} type='button'>
-              Huỷ
-            </Button>
-            <Button type='submit' loading={updateMutation.status === 'pending'}>
-              Lưu
-            </Button>
-          </Group>
-        </form>
-      </Drawer>
+        user={
+          editingUser
+            ? {
+                id: editingUser.id,
+                email: editingUser.email,
+                name: editingUser.name ?? '',
+                image: editingUser.image ?? '',
+                role: editingUser.role,
+              }
+            : null
+        }
+        loading={updateMutation.status === 'pending'}
+        onClose={() => {
+          closeEdit();
+          setEditingUser(null);
+        }}
+        onSubmit={(values) => {
+          if (!editingUser?.id) return;
+          updateMutation.mutate({ id: editingUser.id, values });
+        }}
+      />
       <Drawer
         opened={createOpened}
         onClose={closeCreate}
@@ -363,6 +297,14 @@ export default function AccountManagerPage() {
           }}
         />
       </Drawer>
+      <AccountDetailsDrawer
+        opened={viewOpened}
+        user={viewedUser}
+        onClose={() => {
+          closeView();
+          setViewedUser(null);
+        }}
+      />
     </div>
   );
 }
