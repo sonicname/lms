@@ -53,6 +53,7 @@ export default function LessonManagerPage() {
   const qc = useQueryClient();
   const [expanded, setExpanded] = useState<string | null>(null);
   const [chaptersOrdered, setChaptersOrdered] = useState<ChapterModel[]>([]);
+  const [lessonsOrdered, setLessonsOrdered] = useState<LessonModel[]>([]);
 
   const [createOpen, setCreateOpen] = useState(false);
   const [editChapter, setEditChapter] = useState<ChapterModel | null>(null);
@@ -96,6 +97,18 @@ export default function LessonManagerPage() {
         : ['classes', 'lessons', 'none'],
     queryFn: () => curriculumApi.listLessons(classId!, expanded!),
   });
+
+  // initialize lesson local order when lesson list changes for expanded chapter
+  useEffect(() => {
+    if (expanded && lessonsQuery.data) {
+      const sorted = [...lessonsQuery.data].sort(
+        (a, b) => a.displayOrder - b.displayOrder,
+      );
+      setLessonsOrdered(sorted);
+    } else {
+      setLessonsOrdered([]);
+    }
+  }, [lessonsQuery.data, expanded]);
 
   const assetsQuery = useQuery({
     enabled: !!attachLesson && !!classId,
@@ -279,6 +292,66 @@ export default function LessonManagerPage() {
     persistTimeoutRef.current = setTimeout(() => persistOrder(reordered), 500);
   };
 
+  // DnD for lessons within expanded chapter
+  const persistLessonTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
+  const persistLessonOrder = async (ordered: LessonModel[]) => {
+    const changed = ordered.filter(
+      (l, idx) =>
+        lessonsQuery.data?.find((x) => x.id === l.id)?.displayOrder !== idx + 1,
+    );
+    if (!changed.length || !expanded) return;
+    try {
+      await Promise.all(
+        changed.map((l) =>
+          curriculumApi.updateLesson(classId!, expanded, l.id, {
+            displayOrder: l.displayOrder,
+          }),
+        ),
+      );
+      notifications.show({
+        color: 'green',
+        message: 'Đã cập nhật thứ tự bài học',
+      });
+      qc.invalidateQueries({
+        queryKey: ['classes', 'lessons', classId, expanded],
+      });
+    } catch (err: unknown) {
+      const apiMessage =
+        typeof err === 'object' &&
+        err !== null &&
+        'response' in err &&
+        (err as { response?: { data?: { message?: string } } }).response?.data
+          ?.message;
+      notifications.show({
+        color: 'red',
+        message: apiMessage || 'Cập nhật thứ tự bài học thất bại',
+      });
+    }
+  };
+
+  const handleLessonDragEnd = (event: DragEndEvent) => {
+    if (!expanded) return;
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = lessonsOrdered.findIndex(
+      (l) => l.id === String(active.id),
+    );
+    const newIndex = lessonsOrdered.findIndex((l) => l.id === String(over.id));
+    if (oldIndex === -1 || newIndex === -1) return;
+    const reordered = arrayMove(lessonsOrdered, oldIndex, newIndex).map(
+      (l, idx) => ({ ...l, displayOrder: idx + 1 }),
+    );
+    setLessonsOrdered(reordered);
+    if (persistLessonTimeoutRef.current)
+      clearTimeout(persistLessonTimeoutRef.current);
+    persistLessonTimeoutRef.current = setTimeout(
+      () => persistLessonOrder(reordered),
+      500,
+    );
+  };
+
   const createLessonMutation = useMutation({
     mutationFn: (vars: {
       chapterId: string;
@@ -364,71 +437,101 @@ export default function LessonManagerPage() {
 
         {isExpanded && (
           <Card mt='md' withBorder>
-            <LessonsTable lessons={lessonsQuery.data || []} />
+            {lessonsOrdered.length ? (
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleLessonDragEnd}
+              >
+                <SortableContext
+                  items={lessonsOrdered.map((l) => l.id)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  <LessonsTable lessons={lessonsOrdered} />
+                </SortableContext>
+              </DndContext>
+            ) : (
+              <LessonsTable lessons={[]} />
+            )}
           </Card>
         )}
       </Card>
     );
   };
 
-  const LessonsTable = ({ lessons }: { lessons: LessonModel[] }) => {
-    const rows = lessons.map((l) => {
-      const when = l.scheduleDate ? new Date(l.scheduleDate) : null;
-      const isFuture = when ? when.getTime() > Date.now() : false;
-      return (
-        <Table.Tr key={l.id}>
-          <Table.Td>
-            <Text fw={500} size='sm'>
-              {l.title}
-            </Text>
-            <Text size='xs' c='dimmed'>
-              {(l.content || '').slice(0, 100)}
-              {(l.content || '').length > 100 ? '…' : ''}
-            </Text>
-          </Table.Td>
-          <Table.Td>
-            {when ? (
-              <Group gap={6} wrap='nowrap'>
-                <Text size='sm'>{when.toLocaleString()}</Text>
-                <Badge color={isFuture ? 'yellow' : 'green'} variant='light'>
-                  {isFuture ? 'Sắp diễn ra' : 'Đã diễn ra'}
-                </Badge>
-              </Group>
-            ) : (
-              <Badge color='blue' variant='light'>
-                Không lịch
+  function LessonRow({ lesson }: { lesson: LessonModel }) {
+    const { attributes, listeners, setNodeRef, transform, transition } =
+      useSortable({ id: lesson.id });
+    const style = {
+      transform: CSS.Transform.toString(transform),
+      transition,
+    } as React.CSSProperties;
+    const when = lesson.scheduleDate ? new Date(lesson.scheduleDate) : null;
+    const isFuture = when ? when.getTime() > Date.now() : false;
+    return (
+      <Table.Tr ref={setNodeRef} style={style}>
+        <Table.Td>
+          <Group gap='xs'>
+            <span {...attributes} {...listeners}>
+              <LuGripVertical size={16} style={{ cursor: 'grab' }} />
+            </span>
+            <div>
+              <Text fw={500} size='sm'>
+                {lesson.title}
+              </Text>
+              <Text size='xs' c='dimmed'>
+                {(lesson.content || '').slice(0, 100)}
+                {(lesson.content || '').length > 100 ? '…' : ''}
+              </Text>
+            </div>
+          </Group>
+        </Table.Td>
+        <Table.Td>
+          {when ? (
+            <Group gap={6} wrap='nowrap'>
+              <Text size='sm'>{when.toLocaleString()}</Text>
+              <Badge color={isFuture ? 'yellow' : 'green'} variant='light'>
+                {isFuture ? 'Sắp diễn ra' : 'Đã diễn ra'}
               </Badge>
-            )}
-          </Table.Td>
-          <Table.Td>
-            <Text size='sm'>{l.displayOrder}</Text>
-          </Table.Td>
-          <Table.Td style={{ width: 100 }}>
-            <Button
-              size='xs'
-              variant='light'
-              leftSection={<LuPencil size={14} />}
-              onClick={() => setEditLesson({ chapterId: expanded!, lesson: l })}
-            >
-              Sửa
-            </Button>
-          </Table.Td>
-          <Table.Td style={{ width: 60 }}>
-            <ActionIcon
-              variant='subtle'
-              color='violet'
-              onClick={() =>
-                setAttachLesson({ chapterId: expanded!, lessonId: l.id })
-              }
-              title='Gán nội dung'
-            >
-              <LuFolderPlus />
-            </ActionIcon>
-          </Table.Td>
-        </Table.Tr>
-      );
-    });
+            </Group>
+          ) : (
+            <Badge color='blue' variant='light'>
+              Không lịch
+            </Badge>
+          )}
+        </Table.Td>
+        <Table.Td>
+          <Text size='sm'>{lesson.displayOrder}</Text>
+        </Table.Td>
+        <Table.Td style={{ width: 100 }}>
+          <Button
+            size='xs'
+            variant='light'
+            leftSection={<LuPencil size={14} />}
+            onClick={() =>
+              setEditLesson({ chapterId: expanded!, lesson: lesson })
+            }
+          >
+            Sửa
+          </Button>
+        </Table.Td>
+        <Table.Td style={{ width: 60 }}>
+          <ActionIcon
+            variant='subtle'
+            color='violet'
+            onClick={() =>
+              setAttachLesson({ chapterId: expanded!, lessonId: lesson.id })
+            }
+            title='Gán nội dung'
+          >
+            <LuFolderPlus />
+          </ActionIcon>
+        </Table.Td>
+      </Table.Tr>
+    );
+  }
 
+  const LessonsTable = ({ lessons }: { lessons: LessonModel[] }) => {
     return (
       <Table striped withTableBorder withRowBorders highlightOnHover>
         <Table.Thead>
@@ -441,11 +544,11 @@ export default function LessonManagerPage() {
           </Table.Tr>
         </Table.Thead>
         <Table.Tbody>
-          {rows.length ? (
-            rows
+          {lessons.length ? (
+            lessons.map((l) => <LessonRow key={l.id} lesson={l} />)
           ) : (
             <Table.Tr>
-              <Table.Td colSpan={4}>
+              <Table.Td colSpan={5}>
                 <Text c='dimmed' ta='center'>
                   {lessonsQuery.status === 'pending'
                     ? 'Đang tải...'
