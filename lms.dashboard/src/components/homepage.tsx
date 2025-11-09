@@ -1,7 +1,12 @@
+import { Navigate } from 'react-router-dom';
+import { useAuthStore } from '../modules/auth/stores/auth-store';
+
 export default function Homepage() {
-  return (
-    <div className='w-full h-screen flex items-center justify-center'>
-      Homepage
-    </div>
-  );
+  const { isLoggedIn } = useAuthStore();
+
+  if (!isLoggedIn()) {
+    return <Navigate to='/auth/sign-in' replace />;
+  }
+
+  return <Navigate to='/dashboard' replace />;
 }

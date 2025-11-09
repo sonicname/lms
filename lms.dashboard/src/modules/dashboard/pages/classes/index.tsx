@@ -10,10 +10,10 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core';
-import { useDisclosure } from '@mantine/hooks';
+import { useDebouncedValue, useDisclosure } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { LuEye, LuPencil, LuTrash2 } from 'react-icons/lu';
 import { useNavigate } from 'react-router-dom';
 import SkeletonCard from '../../../../components/skeleton-card';
@@ -36,13 +36,18 @@ export default function ClassesManagerPage() {
   const [editingClass, setEditingClass] = useState<ClassModel | null>(null);
   const [page, setPage] = useState<number>(1);
   const [search, setSearch] = useState<string>('');
+  const [debouncedSearch] = useDebouncedValue(search, 300);
+  // Reset to first page when raw search term changes
+  useEffect(() => {
+    setPage(1);
+  }, [search]);
 
   const qc = useQueryClient();
   const navigate = useNavigate();
 
   const { data, isLoading } = useQuery({
-    queryKey: ClassesQueryKey.list({ page, search }),
-    queryFn: async () => classesApi.list({ page, search }),
+    queryKey: ClassesQueryKey.list({ page, search: debouncedSearch }),
+    queryFn: async () => classesApi.list({ page, search: debouncedSearch }),
   });
 
   const listData = useMemo(() => data?.data ?? [], [data]);

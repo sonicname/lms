@@ -27,6 +27,5 @@ const router = createBrowserRouter([
     index: true,
   },
 ]);
-console.log('🚀 ~ router:', router);
 
 export default router;

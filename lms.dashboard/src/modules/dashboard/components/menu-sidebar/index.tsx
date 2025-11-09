@@ -15,45 +15,22 @@ const sidebarMenuItems = [
     label: 'Dashboard',
     icon: LuBookOpen,
     initiallyOpened: true,
+    href: '/dashboard',
   },
   {
-    label: 'Tài khoản',
+    label: 'Quản lý tài khoản',
     icon: LuCircleUserRound,
-    initiallyOpened: true,
-    links: [
-      { label: 'Danh sách tài khoản', link: '/dashboard/accounts' },
-      { label: 'Tài khoản bị khoá', link: '/dashboard/accounts/blocked' },
-      {
-        label: 'Danh sách giáo viên',
-        link: '/dashboard/accounts/teachers',
-      },
-      {
-        label: 'Danh sách học sinh',
-        link: '/dashboard/accounts/students',
-      },
-    ],
+    href: '/dashboard/accounts',
   },
   {
     label: 'Lớp học',
     icon: MdOutlineClass,
-    links: [
-      { label: 'Danh sách lớp học', link: '/dashboard/classes' },
-      { label: 'Thêm lớp học', link: '/dashboard/classes/create' },
-    ],
+    href: '/dashboard/classes',
   },
   {
     label: 'Nội dung',
     icon: LuFileArchive,
-    links: [
-      {
-        label: 'Danh sách nội dung',
-        link: '/dashboard/contents',
-      },
-      {
-        label: 'Thêm nội dung',
-        link: '/dashboard/contents/create',
-      },
-    ],
+    href: '/dashboard/contents',
   },
 ];
 
@@ -61,7 +38,7 @@ export default function MenuSidebar() {
   const { clearAuth } = getAuthStore();
 
   const links = sidebarMenuItems.map((item) => (
-    <LinksGroup {...item} key={item.label} />
+    <LinksGroup {...item} key={item.label} href={item.href} />
   ));
 
   return (

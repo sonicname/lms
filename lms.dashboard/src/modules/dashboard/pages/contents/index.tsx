@@ -11,7 +11,7 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core';
-import { useDisclosure } from '@mantine/hooks';
+import { useDebouncedValue, useDisclosure } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import appEnv from 'app-env';
@@ -33,6 +33,8 @@ export default function ContentManagerPage() {
     page: 1,
     limit: 10,
   });
+  const [search, setSearch] = useState<string>('');
+  const [debouncedSearch] = useDebouncedValue(search, 300);
   const [deleteOpened, { open: openDelete, close: closeDelete }] =
     useDisclosure(false);
   const [uploadOpened, { open: openUpload, close: closeUpload }] =
@@ -44,8 +46,11 @@ export default function ContentManagerPage() {
   const qc = useQueryClient();
 
   const { data, isLoading } = useQuery({
-    queryKey: [...AssetsQueryKey.lists(), filter],
-    queryFn: async () => assetsApi.list(filter),
+    queryKey: [
+      ...AssetsQueryKey.lists(),
+      { ...filter, search: debouncedSearch },
+    ],
+    queryFn: async () => assetsApi.list({ ...filter, search: debouncedSearch }),
   });
 
   const assets = useMemo(() => data?.data ?? [], [data]);
@@ -151,10 +156,13 @@ export default function ContentManagerPage() {
       <Flex justify='space-between'>
         <TextInput
           placeholder='Tìm theo tên hoặc loại...'
-          value={filter.search ?? ''}
-          onChange={(e) =>
-            setFilter((f) => ({ ...f, page: 1, search: e.currentTarget.value }))
-          }
+          value={search}
+          onChange={(e) => {
+            const v = e.currentTarget.value;
+            setSearch(v);
+            // Reset page immediately on raw search change for UX
+            setFilter((f) => ({ ...f, page: 1 }));
+          }}
           w={300}
         />
         <Button leftSection={<LuUpload />} onClick={openUpload}>

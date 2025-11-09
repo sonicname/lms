@@ -17,6 +17,7 @@ interface LinksGroupProps {
   label: string;
   initiallyOpened?: boolean;
   links?: { label: string; link: string }[];
+  href?: string;
 }
 
 export function LinksGroup({
@@ -24,6 +25,7 @@ export function LinksGroup({
   label,
   initiallyOpened,
   links,
+  href,
 }: LinksGroupProps) {
   const navigate = useNavigate();
 
@@ -49,7 +51,14 @@ export function LinksGroup({
         className={classes.control}
       >
         <Group justify='space-between' gap={0}>
-          <Box style={{ display: 'flex', alignItems: 'center' }}>
+          <Box
+            style={{ display: 'flex', alignItems: 'center' }}
+            onClick={() => {
+              if (href) {
+                navigate(href);
+              }
+            }}
+          >
             <ThemeIcon variant='light' size={30}>
               <Icon size={18} />
             </ThemeIcon>
