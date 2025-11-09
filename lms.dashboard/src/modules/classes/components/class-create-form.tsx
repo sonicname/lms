@@ -84,18 +84,23 @@ export default function ClassCreateForm({ onCreated }: ClassCreateFormProps) {
       <Stack gap='md'>
         <TextInput
           label='Tên lớp'
+          placeholder='Nhập tên lớp'
           withAsterisk
           {...form.getInputProps('name')}
         />
         <TextInput
           label='Mã lớp'
+          placeholder='Nhập mã lớp'
           withAsterisk
           {...form.getInputProps('code')}
         />
-        <TextInput label='Mô tả' {...form.getInputProps('description')} />
+        <TextInput
+          label='Mô tả'
+          placeholder='Nhập mô tả'
+          {...form.getInputProps('description')}
+        />
         <Autocomplete
-          label='Giáo viên (Admin)'
-          description='Chỉ Admin có thể gán giáo viên khi tạo lớp'
+          label='Giáo viên'
           placeholder='Nhập tên hoặc email giáo viên'
           data={teacherOptions.map((o) => o.label)}
           value={teacherText}

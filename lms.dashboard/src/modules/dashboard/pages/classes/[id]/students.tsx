@@ -3,6 +3,7 @@ import {
   Avatar,
   Badge,
   Button,
+  Drawer,
   Group,
   Pagination,
   Select,
@@ -298,58 +299,54 @@ export default function ClassStudentsPage() {
         />
       </Group>
 
-      {/* Add student mini drawer */}
-      {addOpened && (
-        <div className='p-3 border rounded-md'>
-          <Group justify='space-between' mb='sm'>
-            <Text fw={500}>Thêm học sinh</Text>
-            <Button variant='light' onClick={closeAdd}>
-              Đóng
-            </Button>
-          </Group>
-          <TextInput
-            placeholder='Tìm theo tên/email'
-            value={search}
-            onChange={(e) => setSearch(e.currentTarget.value)}
-          />
-          <div className='mt-2 max-h-60 overflow-auto border rounded'>
-            {availableQuery.data?.data?.length ? (
-              availableQuery.data.data.map(
-                (u: { id: string; name: string | null; email: string }) => (
-                  <Group
-                    key={u.id}
-                    justify='space-between'
-                    className='px-2 py-1 border-b'
-                  >
-                    <Group>
-                      <Avatar radius='xl' size='sm' color='blue'>
-                        {(u.name || u.email || '?').slice(0, 1).toUpperCase()}
-                      </Avatar>
-                      <div>
-                        <Text size='sm'>{u.name || u.email}</Text>
-                        <Text size='xs' c='dimmed'>
-                          {u.email}
-                        </Text>
-                      </div>
-                    </Group>
-                    <Button
-                      size='xs'
-                      onClick={() => addMutation.mutate(u.id)}
-                      loading={addMutation.status === 'pending'}
-                    >
-                      Thêm
-                    </Button>
+      <Drawer
+        opened={addOpened}
+        onClose={closeAdd}
+        title='Thêm học sinh'
+        position='right'
+        size='md'
+      >
+        <TextInput
+          placeholder='Tìm theo tên/email'
+          value={search}
+          onChange={(e) => setSearch(e.currentTarget.value)}
+          mb='sm'
+        />
+        <div className='mt-2 max-h-80 overflow-auto'>
+          {availableQuery.data?.data?.length ? (
+            availableQuery.data.data.map(
+              (u: { id: string; name: string | null; email: string }) => (
+                <Group
+                  key={u.id}
+                  justify='space-between'
+                  className='px-2 py-2 border-b'
+                >
+                  <Group>
+                    <Avatar radius='xl' size='sm' color='blue'>
+                      {(u.name || u.email || '?').slice(0, 1).toUpperCase()}
+                    </Avatar>
+                    <div>
+                      <Text size='sm'>{u.name || u.email}</Text>
+                      <Text size='xs' c='dimmed'>
+                        {u.email}
+                      </Text>
+                    </div>
                   </Group>
-                ),
-              )
-            ) : (
-              <Text size='sm' c='dimmed' className='p-2'>
-                Không có kết quả
-              </Text>
-            )}
-          </div>
+                  <Button
+                    size='xs'
+                    onClick={() => addMutation.mutate(u.id)}
+                    loading={addMutation.status === 'pending'}
+                  >
+                    Thêm
+                  </Button>
+                </Group>
+              ),
+            )
+          ) : (
+            <p>Không có kết quả</p>
+          )}
         </div>
-      )}
+      </Drawer>
     </div>
   );
 }
