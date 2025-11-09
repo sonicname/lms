@@ -1,7 +1,6 @@
 import {
   ActionIcon,
   Button,
-  Card,
   Drawer,
   Group,
   Modal,
@@ -16,6 +15,7 @@ import { DateTimePicker } from '@mantine/dates';
 import { useDisclosure } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import dayjs from 'dayjs';
 import { useMemo, useState } from 'react';
 import { LuFolderPlus, LuPlus, LuTrash2 } from 'react-icons/lu';
 import { useParams } from 'react-router-dom';
@@ -194,49 +194,48 @@ export default function ClassTestsPage() {
           Chỉ giáo viên sở hữu lớp mới có thể tạo bài kiểm tra.
         </Text>
       )}
-      <Card withBorder>
-        <Table striped withTableBorder withRowBorders highlightOnHover>
-          <Table.Thead>
+
+      <Table striped withTableBorder withRowBorders highlightOnHover>
+        <Table.Thead>
+          <Table.Tr>
+            <Table.Th>Thông tin</Table.Th>
+            <Table.Th style={{ width: 140 }}>Hành động</Table.Th>
+          </Table.Tr>
+        </Table.Thead>
+        <Table.Tbody>
+          {testsLoading && (
             <Table.Tr>
-              <Table.Th>Thông tin</Table.Th>
-              <Table.Th style={{ width: 140 }}>Hành động</Table.Th>
+              <Table.Td colSpan={2}>
+                <Text c='dimmed' ta='center'>
+                  Đang tải...
+                </Text>
+              </Table.Td>
             </Table.Tr>
-          </Table.Thead>
-          <Table.Tbody>
-            {testsLoading && (
+          )}
+          {testsError && !testsLoading && (
+            <Table.Tr>
+              <Table.Td colSpan={2}>
+                <Text c='red' ta='center'>
+                  Lỗi tải danh sách bài kiểm tra
+                </Text>
+              </Table.Td>
+            </Table.Tr>
+          )}
+          {!testsLoading &&
+            !testsError &&
+            (rows.length ? (
+              rows
+            ) : (
               <Table.Tr>
                 <Table.Td colSpan={2}>
                   <Text c='dimmed' ta='center'>
-                    Đang tải...
+                    Chưa có bài kiểm tra
                   </Text>
                 </Table.Td>
               </Table.Tr>
-            )}
-            {testsError && !testsLoading && (
-              <Table.Tr>
-                <Table.Td colSpan={2}>
-                  <Text c='red' ta='center'>
-                    Lỗi tải danh sách bài kiểm tra
-                  </Text>
-                </Table.Td>
-              </Table.Tr>
-            )}
-            {!testsLoading &&
-              !testsError &&
-              (rows.length ? (
-                rows
-              ) : (
-                <Table.Tr>
-                  <Table.Td colSpan={2}>
-                    <Text c='dimmed' ta='center'>
-                      Chưa có bài kiểm tra
-                    </Text>
-                  </Table.Td>
-                </Table.Tr>
-              ))}
-          </Table.Tbody>
-        </Table>
-      </Card>
+            ))}
+        </Table.Tbody>
+      </Table>
 
       <Drawer
         opened={createOpened}
@@ -296,8 +295,8 @@ export default function ClassTestsPage() {
                 }
                 createMutation.mutate({
                   name: testName.trim(),
-                  startDate: startDate ? startDate.toISOString() : null,
-                  endDate: endDate ? endDate.toISOString() : null,
+                  startDate: startDate ? dayjs(startDate).toISOString() : null,
+                  endDate: endDate ? dayjs(endDate).toISOString() : null,
                 });
               }}
               loading={createMutation.status === 'pending'}

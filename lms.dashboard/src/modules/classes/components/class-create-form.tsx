@@ -3,10 +3,11 @@ import { useForm } from '@mantine/form';
 import { useDebouncedValue } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { UsersQueryKey } from '../../accounts/constants/users-query-key';
 import type { UserModel } from '../../accounts/models/user.model';
 import { accountApi } from '../../accounts/services/account.api';
+import { useAuthStore } from '../../auth/stores/auth-store';
 import { ClassesQueryKey } from '../constants/classes-query-key';
 import type { CreateClassModel } from '../models/create-class.model';
 import { classesApi } from '../services/classes.api';
@@ -17,6 +18,11 @@ export type ClassCreateFormProps = {
 
 export default function ClassCreateForm({ onCreated }: ClassCreateFormProps) {
   const qc = useQueryClient();
+  const { getCurrentUserRole, user } = useAuthStore();
+
+  const currentUserRole = getCurrentUserRole();
+  const currentUserId = user?.id;
+
   const form = useForm<CreateClassModel>({
     initialValues: {
       name: '',
@@ -49,6 +55,7 @@ export default function ClassCreateForm({ onCreated }: ClassCreateFormProps) {
         search: debouncedTeacher,
         limit: 10,
       }),
+    enabled: currentUserRole === 'admin',
   });
 
   const teacherList = (teachersQuery.data?.data ?? []) as UserModel[];
@@ -75,6 +82,12 @@ export default function ClassCreateForm({ onCreated }: ClassCreateFormProps) {
     },
   });
 
+  useEffect(() => {
+    if (currentUserRole === 'admin') return;
+
+    form.setFieldValue('teacherId', currentUserId);
+  }, [currentUserRole, currentUserId]);
+
   return (
     <form
       onSubmit={form.onSubmit((values) => {
@@ -99,27 +112,29 @@ export default function ClassCreateForm({ onCreated }: ClassCreateFormProps) {
           placeholder='Nhập mô tả'
           {...form.getInputProps('description')}
         />
-        <Autocomplete
-          label='Giáo viên'
-          placeholder='Nhập tên hoặc email giáo viên'
-          data={teacherOptions.map((o) => o.label)}
-          value={teacherText}
-          onChange={(val) => {
-            setTeacherText(val);
-            const match = teacherOptions.find((o) => o.label === val);
-            form.setFieldValue('teacherId', match?.id);
-          }}
-          onOptionSubmit={(val) => {
-            setTeacherText(val);
-            const match = teacherOptions.find((o) => o.label === val);
-            form.setFieldValue('teacherId', match?.id);
-          }}
-          rightSection={
-            teachersQuery.isLoading ? (
-              <span style={{ fontSize: 12 }}>Đang tìm...</span>
-            ) : undefined
-          }
-        />
+        {currentUserRole === 'admin' ? (
+          <Autocomplete
+            label='Giáo viên'
+            placeholder='Nhập tên hoặc email giáo viên'
+            data={teacherOptions.map((o) => o.label)}
+            value={teacherText}
+            onChange={(val) => {
+              setTeacherText(val);
+              const match = teacherOptions.find((o) => o.label === val);
+              form.setFieldValue('teacherId', match?.id);
+            }}
+            onOptionSubmit={(val) => {
+              setTeacherText(val);
+              const match = teacherOptions.find((o) => o.label === val);
+              form.setFieldValue('teacherId', match?.id);
+            }}
+            rightSection={
+              teachersQuery.isLoading ? (
+                <span style={{ fontSize: 12 }}>Đang tìm...</span>
+              ) : undefined
+            }
+          />
+        ) : null}
         <Group justify='flex-end'>
           <Button type='submit' loading={createMutation.status === 'pending'}>
             Tạo

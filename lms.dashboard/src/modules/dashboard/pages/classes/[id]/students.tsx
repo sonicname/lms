@@ -316,11 +316,7 @@ export default function ClassStudentsPage() {
           {availableQuery.data?.data?.length ? (
             availableQuery.data.data.map(
               (u: { id: string; name: string | null; email: string }) => (
-                <Group
-                  key={u.id}
-                  justify='space-between'
-                  className='px-2 py-2 border-b'
-                >
+                <Group key={u.id} justify='space-between' className='px-2 py-2'>
                   <Group>
                     <Avatar radius='xl' size='sm' color='blue'>
                       {(u.name || u.email || '?').slice(0, 1).toUpperCase()}

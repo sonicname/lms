@@ -9,6 +9,7 @@ interface User {
   image: string;
   createdAt: string;
   updatedAt: string;
+  role: 'admin' | 'teacher' | 'student';
 }
 
 export interface AuthStore {
@@ -23,6 +24,8 @@ export interface AuthStore {
   setUser: (user?: User) => void;
 
   clearAuth: (showNotification?: boolean) => void;
+
+  getCurrentUserRole: () => User['role'] | undefined;
 }
 
 export const useAuthStore = create<AuthStore>()(
@@ -53,6 +56,10 @@ export const useAuthStore = create<AuthStore>()(
           refreshToken: undefined,
           user: undefined,
         });
+      },
+      getCurrentUserRole: () => {
+        const user = get().user;
+        return user?.role;
       },
     }),
     {

@@ -46,7 +46,7 @@ export default function QaManagerPage() {
   // Classes accessible (mine)
   const classesQuery = useQuery({
     queryKey: ['qa', 'classes'],
-    queryFn: () => classesApi.mine({ page: 1 }),
+    queryFn: () => classesApi.list({ page: 1 }),
   });
   const classOptions = (classesQuery.data?.data || []).map(
     (c: { id: string; name: string }) => ({

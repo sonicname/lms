@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { notifications } from '@mantine/notifications';
 import appEnv from 'app-env';
 import axios, { type AxiosResponse } from 'axios';
 import api from '../../../core/api/index.ts';
@@ -11,6 +12,7 @@ export type PublicUser = {
   image?: string | null;
   createdAt: string;
   updatedAt: string;
+  role: 'admin' | 'teacher' | 'student';
 };
 
 export type Tokens = {
@@ -42,17 +44,28 @@ export async function signIn(payload: SignInDto): Promise<AuthResponse> {
   const data = signInResponse.data;
 
   const authStore = getAuthStore();
+  if (data.user.role === 'student') {
+    notifications.show({
+      title: 'Không có quyền truy cập',
+      message: 'Học sinh không được phép đăng nhập.',
+      color: 'red',
+    });
 
-  authStore.setAccessToken(data.tokens.accessToken);
-  authStore.setRefreshToken(data.tokens.refreshToken);
-  authStore.setUser({
-    createdAt: data.user.createdAt,
-    updatedAt: data.user.updatedAt,
-    email: data.user.email,
-    id: data.user.id,
-    image: data.user.image || '',
-    name: data.user.name || '',
-  });
+    authStore.clearAuth(false);
+    // throw new Error('Students are not allowed to log in');
+  } else {
+    authStore.setAccessToken(data.tokens.accessToken);
+    authStore.setRefreshToken(data.tokens.refreshToken);
+    authStore.setUser({
+      createdAt: data.user.createdAt,
+      updatedAt: data.user.updatedAt,
+      email: data.user.email,
+      id: data.user.id,
+      image: data.user.image || '',
+      name: data.user.name || '',
+      role: data.user.role as 'admin' | 'teacher' | 'student',
+    });
+  }
 
   return data;
 }

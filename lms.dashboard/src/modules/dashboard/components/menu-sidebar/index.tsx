@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Button, Code, Group, ScrollArea } from '@mantine/core';
 import {
   LuBookOpen,
@@ -10,37 +11,44 @@ import { getAuthStore } from '../../../auth/stores/auth-store';
 import { LinksGroup } from '../navbar-links-group';
 import classes from './menu-sidebar.module.css';
 
-const sidebarMenuItems = [
-  {
-    label: 'Dashboard',
-    icon: LuBookOpen,
-    initiallyOpened: true,
-    href: '/dashboard',
-  },
-  {
-    label: 'Quản lý tài khoản',
-    icon: LuCircleUserRound,
-    href: '/dashboard/accounts',
-  },
-  {
-    label: 'Lớp học',
-    icon: MdOutlineClass,
-    href: '/dashboard/classes',
-  },
-  {
-    label: 'Nội dung',
-    icon: LuFileArchive,
-    href: '/dashboard/contents',
-  },
-  {
-    label: 'Hỏi & Đáp',
-    icon: LuFileArchive,
-    href: '/dashboard/qa',
-  },
-];
-
 export default function MenuSidebar() {
-  const { clearAuth } = getAuthStore();
+  const { clearAuth, getCurrentUserRole } = getAuthStore();
+
+  const userRole = getCurrentUserRole();
+
+  const sidebarMenuItems = [
+    {
+      label: 'Dashboard',
+      icon: LuBookOpen,
+      initiallyOpened: true,
+      href: '/dashboard',
+    },
+    userRole === 'admin' && {
+      label: 'Quản lý tài khoản',
+      icon: LuCircleUserRound,
+      href: '/dashboard/accounts',
+    },
+    {
+      label: 'Lớp học',
+      icon: MdOutlineClass,
+      href: '/dashboard/classes',
+    },
+    {
+      label: 'Nội dung',
+      icon: LuFileArchive,
+      href: '/dashboard/contents',
+    },
+    {
+      label: 'Hỏi & Đáp',
+      icon: LuFileArchive,
+      href: '/dashboard/qa',
+    },
+  ].filter(Boolean) as {
+    label: string;
+    icon: React.FC<any>;
+    initiallyOpened?: boolean;
+    href: string;
+  }[];
 
   const links = sidebarMenuItems.map((item) => (
     <LinksGroup {...item} key={item.label} href={item.href} />
