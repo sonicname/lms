@@ -32,6 +32,11 @@ const sidebarMenuItems = [
     icon: LuFileArchive,
     href: '/dashboard/contents',
   },
+  {
+    label: 'Hỏi & Đáp',
+    icon: LuFileArchive,
+    href: '/dashboard/qa',
+  },
 ];
 
 export default function MenuSidebar() {
