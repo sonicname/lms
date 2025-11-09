@@ -1,3 +1,4 @@
+import { notifications } from '@mantine/notifications';
 import axios, {
   type AxiosError,
   type AxiosInstance,
@@ -59,6 +60,19 @@ class Api {
         const originalRequest = error.config as
           | RetriableRequestConfig
           | undefined;
+
+        // handle 403 forbidden due to role restrictions
+        if (status === 403) {
+          notifications.show({
+            title: 'Không có quyền truy cập',
+            message: 'Bạn không có quyền truy cập',
+            color: 'red',
+          });
+
+          getAuthStore().clearAuth(false);
+
+          return Promise.reject(error);
+        }
 
         // Only handle 401 once per request to avoid infinite loops
         if (status === 401 && originalRequest && !originalRequest._retry) {

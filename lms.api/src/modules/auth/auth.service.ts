@@ -25,6 +25,7 @@ type PublicUser = {
   email: string;
   name?: string | null;
   image?: string | null;
+  role: string;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -162,6 +163,7 @@ export class AuthService {
       email: user.email,
       name: user.name,
       image: user.image,
+      role: user.role,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     };

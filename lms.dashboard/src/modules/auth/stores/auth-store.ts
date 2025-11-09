@@ -22,7 +22,7 @@ export interface AuthStore {
   user?: User;
   setUser: (user?: User) => void;
 
-  clearAuth: () => void;
+  clearAuth: (showNotification?: boolean) => void;
 }
 
 export const useAuthStore = create<AuthStore>()(
@@ -39,12 +39,14 @@ export const useAuthStore = create<AuthStore>()(
       user: undefined,
       setUser: (user?: User) => set({ user }),
 
-      clearAuth: () => {
-        notifications.show({
-          title: 'Logged out',
-          message: 'Bạn đã đăng xuất thành công.',
-          color: 'green',
-        });
+      clearAuth: (showNotification = true) => {
+        if (showNotification) {
+          notifications.show({
+            title: 'Logged out',
+            message: 'Bạn đã đăng xuất thành công.',
+            color: 'green',
+          });
+        }
 
         set({
           accessToken: undefined,

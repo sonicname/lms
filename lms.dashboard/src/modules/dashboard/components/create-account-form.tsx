@@ -22,7 +22,7 @@ export default function CreateAccountForm({
       email: '',
       password: '',
       name: '',
-      image: '',
+      image: undefined,
       role: 'student',
     },
     validate: {
