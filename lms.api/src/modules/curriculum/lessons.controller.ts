@@ -15,6 +15,8 @@ import { Roles } from 'src/modules/auth/constants/roles.decorator';
 import { Role } from 'src/modules/auth/constants/roles.enum';
 import { JwtCookieAuthGuard } from 'src/modules/auth/guards/jwt-cookie.guard';
 import { RolesGuard } from 'src/modules/auth/guards/roles.guard';
+import { AttachLessonAssetsDocs } from 'src/modules/curriculum/docs/attach-lesson-assets.docs';
+import { AttachLessonAssetsDto } from 'src/modules/curriculum/dtos/attach-lesson-assets.dto';
 import { CurriculumService } from './curriculum.service';
 import { CreateLessonDocs } from './docs/create-lesson.docs';
 import { DeleteLessonDocs } from './docs/delete-lesson.docs';
@@ -143,6 +145,27 @@ export class LessonsController {
       classId,
       chapterId,
       lessonId,
+    );
+  }
+
+  // Teacher: attach assets to lesson
+  @Post(':lessonId/assets')
+  @UseGuards(RolesGuard)
+  @Roles(Role.Teacher)
+  @AttachLessonAssetsDocs()
+  async attachAssets(
+    @Req() req: Request & { user?: { id: string } },
+    @Param('classId') classId: string,
+    @Param('chapterId') chapterId: string,
+    @Param('lessonId') lessonId: string,
+    @Body() dto: AttachLessonAssetsDto,
+  ) {
+    return this.service.attachAssetsToLesson(
+      req.user!.id,
+      classId,
+      chapterId,
+      lessonId,
+      dto.assetIds,
     );
   }
 

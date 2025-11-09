@@ -341,4 +341,48 @@ export class CurriculumService {
       },
     });
   }
+
+  async attachAssetsToLesson(
+    teacherId: string,
+    classId: string,
+    chapterId: string,
+    lessonId: string,
+    assetIds: string[],
+  ) {
+    await this.ensureTeacherOwnsClass(teacherId, classId);
+    const lesson = await this.prisma.lesson.findUnique({
+      where: { id: lessonId },
+    });
+    if (!lesson) throw new NotFoundException('Lesson not found');
+    const chapter = await this.prisma.chapter.findUnique({
+      where: { id: lesson.chapterId },
+      select: { classId: true },
+    });
+    if (
+      !chapter ||
+      chapter.classId !== classId ||
+      lesson.chapterId !== chapterId
+    )
+      throw new NotFoundException('Lesson not in chapter/class');
+
+    // Only allow attaching assets owned by this teacher (unless admin, but this service is teacher-only)
+    await this.prisma.assets.updateMany({
+      where: { id: { in: assetIds }, userId: teacherId },
+      data: { lessonId },
+    });
+
+    return this.prisma.assets.findMany({
+      where: { lessonId },
+      select: {
+        id: true,
+        url: true,
+        filename: true,
+        mimetype: true,
+        fileSize: true,
+        type: true,
+        createdAt: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
 }

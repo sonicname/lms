@@ -39,6 +39,7 @@ export default function ClassDetailLayout() {
       return 'details';
     if (location.pathname.startsWith(`${base}/students`)) return 'students';
     if (location.pathname.startsWith(`${base}/tests`)) return 'tests';
+    if (location.pathname.startsWith(`${base}/lessons`)) return 'lessons';
     return 'details';
   })();
 
@@ -68,12 +69,14 @@ export default function ClassDetailLayout() {
           if (v === 'details') navigate(base);
           if (v === 'students') navigate(`${base}/students`);
           if (v === 'tests') navigate(`${base}/tests`);
+          if (v === 'lessons') navigate(`${base}/lessons`);
         }}
       >
         <Tabs.List>
           <Tabs.Tab value='details'>Chi tiết</Tabs.Tab>
           <Tabs.Tab value='students'>Học sinh</Tabs.Tab>
           <Tabs.Tab value='tests'>Bài kiểm tra</Tabs.Tab>
+          <Tabs.Tab value='lessons'>Bài học</Tabs.Tab>
         </Tabs.List>
       </Tabs>
 
