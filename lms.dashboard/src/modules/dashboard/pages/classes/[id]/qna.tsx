@@ -4,6 +4,7 @@ import {
   Drawer,
   Group,
   Pagination,
+  Select,
   Table,
   Text,
   Textarea,
@@ -16,14 +17,8 @@ import { useMemo, useState } from 'react';
 import { LuMessageSquare } from 'react-icons/lu';
 import { useParams } from 'react-router-dom';
 import SkeletonCard from '../../../../../components/skeleton-card';
-import {
-  chaptersApi,
-  type ChapterItem,
-} from '../../../../classes/services/chapters.api';
-import {
-  lessonsApi,
-  type LessonItem,
-} from '../../../../classes/services/lessons.api';
+import { chaptersApi } from '../../../../classes/services/chapters.api';
+import { lessonsApi } from '../../../../classes/services/lessons.api';
 import {
   qnaApi,
   type CreateAnswerPayload,
@@ -62,11 +57,19 @@ export default function ClassQnaPage() {
 
   // Questions for selected lesson
   const questionsQuery = useQuery({
-    enabled: !!selectedLesson,
-    queryKey: ['lessons', selectedLesson, 'questions'],
+    enabled: !!selectedLesson && !!selectedChapter && !!classId,
+    queryKey: [
+      'classes',
+      classId,
+      'chapters',
+      selectedChapter,
+      'lessons',
+      selectedLesson,
+      'questions',
+    ],
     queryFn: () =>
-      selectedLesson
-        ? qnaApi.listQuestionsByLesson(selectedLesson)
+      selectedLesson && selectedChapter && classId
+        ? qnaApi.listQuestionsFull(classId, selectedChapter, selectedLesson)
         : Promise.resolve([]),
   });
 
@@ -151,48 +154,54 @@ export default function ClassQnaPage() {
       )),
     [pagedQuestions, openAnswer],
   );
-  const loading =
+
+  if (
     chaptersQuery.isLoading ||
     lessonsQuery.isLoading ||
-    questionsQuery.isLoading;
-  if (loading) return <SkeletonCard isFullHeight lines={8} />;
+    questionsQuery.isLoading
+  ) {
+    return <SkeletonCard isFullHeight lines={8} />;
+  }
 
   return (
     <div className='flex flex-col gap-3'>
-      <Group gap='md'>
-        <Tooltip label='Chọn chương'>
-          <select
-            className='border rounded px-2 py-1'
-            value={selectedChapter ?? ''}
-            onChange={(e) => {
-              setSelectedChapter(e.target.value || null);
-              setSelectedLesson(null);
-              setPage(1);
-            }}
-          >
-            {chaptersQuery.data?.map((c: ChapterItem) => (
-              <option key={c.id} value={c.id}>
-                {c.title}
-              </option>
-            ))}
-          </select>
-        </Tooltip>
-        <Tooltip label='Chọn bài học'>
-          <select
-            className='border rounded px-2 py-1'
-            value={selectedLesson ?? ''}
-            onChange={(e) => {
-              setSelectedLesson(e.target.value || null);
-              setPage(1);
-            }}
-          >
-            {lessonsQuery.data?.map((l: LessonItem) => (
-              <option key={l.id} value={l.id}>
-                {l.title}
-              </option>
-            ))}
-          </select>
-        </Tooltip>
+      <Group gap='md' align='flex-end'>
+        <Select
+          label='Chọn chương'
+          placeholder='Chọn chương'
+          data={(chaptersQuery.data ?? []).map((c) => ({
+            value: c.id,
+            label: c.title,
+          }))}
+          value={selectedChapter ?? null}
+          onChange={(val) => {
+            setSelectedChapter(val || null);
+            setSelectedLesson(null);
+            setPage(1);
+          }}
+          searchable
+          nothingFoundMessage='Không có chương'
+          w={260}
+        />
+        <Select
+          label='Chọn bài học'
+          placeholder='Chọn bài học'
+          data={(lessonsQuery.data ?? []).map((l) => ({
+            value: l.id,
+            label: l.title,
+          }))}
+          value={selectedLesson ?? null}
+          onChange={(val) => {
+            setSelectedLesson(val || null);
+            setPage(1);
+          }}
+          searchable
+          disabled={!selectedChapter}
+          nothingFoundMessage={
+            selectedChapter ? 'Không có bài học' : 'Chọn chương trước'
+          }
+          w={260}
+        />
       </Group>
 
       <Table striped withTableBorder withRowBorders highlightOnHover mt='md'>

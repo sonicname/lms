@@ -47,6 +47,27 @@ export const qnaApi = {
   async listQuestionsByLesson(lessonId: string): Promise<QuestionItem[]> {
     return api.get<QuestionItem[]>(`/lessons/${lessonId}/questions`);
   },
+  async listQuestionsFull(
+    classId: string,
+    chapterId: string,
+    lessonId: string,
+  ): Promise<QuestionItem[]> {
+    // Full hierarchical endpoint (QuestionsController)
+    // GET /classes/:classId/chapters/:chapterId/lessons/:lessonId/questions
+    try {
+      return await api.get<QuestionItem[]>(
+        `/classes/${classId}/chapters/${chapterId}/lessons/${lessonId}/questions`,
+      );
+    } catch (err: unknown) {
+      // Fallback: legacy/short lesson route if full path not found (404)
+      const status = (err as { response?: { status?: number } })?.response
+        ?.status;
+      if (status === 404) {
+        return api.get<QuestionItem[]>(`/lessons/${lessonId}/questions`);
+      }
+      throw err;
+    }
+  },
   async createQuestion(
     lessonId: string,
     payload: CreateQuestionPayload,
