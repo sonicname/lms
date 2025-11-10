@@ -128,4 +128,35 @@ export class QuizzesController {
   ) {
     return this.quizzes.deleteChoice(req.user!.id, quizId, choiceId);
   }
+
+  // ----- Tags management -----
+  @Get('me/:quizId/tags')
+  async listTags(
+    @Req() req: Request & { user?: { id: string } },
+    @Param('quizId') quizId: string,
+  ) {
+    return this.quizzes.listTags(req.user!.id, quizId);
+  }
+
+  @Post('me/:quizId/tags')
+  async attachTags(
+    @Req() req: Request & { user?: { id: string } },
+    @Param('quizId') quizId: string,
+    @Body() body: { names: string[] },
+  ) {
+    return this.quizzes.attachTagsByNames(
+      req.user!.id,
+      quizId,
+      body.names || [],
+    );
+  }
+
+  @Delete('me/:quizId/tags/:tagId')
+  async detachTag(
+    @Req() req: Request & { user?: { id: string } },
+    @Param('quizId') quizId: string,
+    @Param('tagId') tagId: string,
+  ) {
+    return this.quizzes.detachTag(req.user!.id, quizId, tagId);
+  }
 }

@@ -18,7 +18,9 @@ export class QuizzesService {
       id: true,
       title: true,
       content: true,
+      correctChoiceId: true,
       userId: true,
+      tags: { select: { id: true, name: true } },
       createdAt: true,
       updatedAt: true,
     } as const;
@@ -169,6 +171,57 @@ export class QuizzesService {
       }
     }
     return updated;
+  }
+
+  // ----- Tags management -----
+  async listTags(userId: string, quizId: string) {
+    await this.ensureQuizOwned(userId, quizId);
+    const quiz = await this.prisma.quiz.findUnique({
+      where: { id: quizId },
+      select: { tags: { select: { id: true, name: true } } },
+    });
+    return quiz?.tags ?? [];
+  }
+
+  async attachTagsByNames(userId: string, quizId: string, names: string[]) {
+    await this.ensureQuizOwned(userId, quizId);
+    if (!names.length) return { success: true, attached: 0 };
+    // Upsert tags by name then connect
+    const existingTags = await this.prisma.quizTags.findMany({
+      where: { name: { in: names } },
+      select: { id: true, name: true },
+    });
+    const existingNames = new Set(existingTags.map((t) => t.name));
+    const toCreate = names.filter((n) => !existingNames.has(n));
+    if (toCreate.length) {
+      await this.prisma.quizTags.createMany({
+        data: toCreate.map((n) => ({ name: n })),
+        skipDuplicates: true,
+      });
+    }
+    const allTags = await this.prisma.quizTags.findMany({
+      where: { name: { in: names } },
+      select: { id: true },
+    });
+    // Connect tags to quiz
+    await this.prisma.quiz.update({
+      where: { id: quizId },
+      data: {
+        tags: { set: [], connect: allTags.map((t) => ({ id: t.id })) },
+      },
+      select: { id: true },
+    });
+    return { success: true, attached: allTags.length };
+  }
+
+  async detachTag(userId: string, quizId: string, tagId: string) {
+    await this.ensureQuizOwned(userId, quizId);
+    await this.prisma.quiz.update({
+      where: { id: quizId },
+      data: { tags: { disconnect: { id: tagId } } },
+      select: { id: true },
+    });
+    return { success: true };
   }
 
   async deleteChoice(userId: string, quizId: string, choiceId: string) {

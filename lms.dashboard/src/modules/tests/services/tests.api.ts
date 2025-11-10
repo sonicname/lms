@@ -22,4 +22,47 @@ export const testsApi = {
       `/classes/${classId}/tests/${testId}/assets`,
       { assetIds },
     ),
+  // MCQ: import quizzes by tags
+  importByTags: (
+    classId: string,
+    testId: string,
+    payload: {
+      tagIds?: string[];
+      tagNames?: string[];
+      points?: number | null;
+      startOrder?: number | null;
+    },
+  ) =>
+    api.post<any, typeof payload>(
+      `/classes/${classId}/tests/${testId}/import-quizzes`,
+      payload,
+    ),
+  // Essay: questions CRUD
+  listEssayQuestions: (classId: string, testId: string) =>
+    api.get<Array<{ id: string; prompt: string | null; displayOrder: number }>>(
+      `/classes/${classId}/tests/${testId}/essay-questions`,
+    ),
+  createEssayQuestion: (
+    classId: string,
+    testId: string,
+    payload: { prompt?: string | null; displayOrder?: number | null },
+  ) =>
+    api.post<any, typeof payload>(
+      `/classes/${classId}/tests/${testId}/essay-questions`,
+      payload,
+    ),
+  updateEssayQuestion: (
+    classId: string,
+    testId: string,
+    questionId: string,
+    payload: { prompt?: string | null; displayOrder?: number | null },
+  ) =>
+    api.patch<any, typeof payload>(
+      `/classes/${classId}/tests/${testId}/essay-questions/${questionId}`,
+      payload,
+    ),
+  deleteEssayQuestion: (classId: string, testId: string, questionId: string) =>
+    api.post(
+      `/classes/${classId}/tests/${testId}/essay-questions/${questionId}/delete`,
+    ),
 };

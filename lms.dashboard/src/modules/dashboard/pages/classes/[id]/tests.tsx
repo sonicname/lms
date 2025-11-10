@@ -5,6 +5,8 @@ import {
   Group,
   Modal,
   MultiSelect,
+  NumberInput,
+  Select,
   Stack,
   Table,
   Text,
@@ -20,7 +22,7 @@ import { useMemo, useState } from 'react';
 import { LuFolderPlus, LuPlus, LuTrash2 } from 'react-icons/lu';
 import { useParams } from 'react-router-dom';
 import { accountApi } from '../../../../accounts/services/account.api';
-import { assetsApi } from '../../../../assets/services/assets.api';
+// import { assetsApi } from '../../../../assets/services/assets.api';
 import { classesApi } from '../../../../classes/services/classes.api';
 import { TestsQueryKey } from '../../../../tests/constants/tests-query-key';
 import type {
@@ -33,11 +35,18 @@ export default function ClassTestsPage() {
   const { id: classId } = useParams();
   const [createOpened, { open: openCreate, close: closeCreate }] =
     useDisclosure(false);
-  const [attachOpened, { open: openAttach, close: closeAttach }] =
+  // Removed legacy asset attach (replaced by import & essay management)
+  const [importOpened, { open: openImport, close: closeImport }] =
+    useDisclosure(false);
+  const [essayOpened, { open: openEssay, close: closeEssay }] =
     useDisclosure(false);
   const [selectedTestId, setSelectedTestId] = useState<string | null>(null);
-  const [assetSearch, setAssetSearch] = useState('');
-  const [selectedAssets, setSelectedAssets] = useState<string[]>([]);
+  // Track currently managed test type (removed, not needed)
+  // Legacy state removed
+  // Legacy selected assets removed
+  const [tagNames, setTagNames] = useState<string[]>([]);
+  const [points, setPoints] = useState<number | ''>(1);
+  const [startOrder, setStartOrder] = useState<number | ''>('');
   const qc = useQueryClient();
 
   const {
@@ -50,17 +59,9 @@ export default function ClassTestsPage() {
     queryFn: async () => (classId ? testsApi.list(classId) : []),
   });
 
-  const { data: assetsData } = useQuery({
-    enabled: attachOpened && !!classId,
-    queryKey: ['assets', 'teacher-owned', { classId, search: assetSearch }],
-    queryFn: async () => assetsApi.list({ search: assetSearch, page: 1 }),
-  });
-  const assetOptions = (assetsData?.data || []).map(
-    (a: { id: string; filename?: string; url?: string }) => ({
-      value: a.id,
-      label: a.filename || a.id,
-    }),
-  );
+  // Removed legacy assets query
+  // Legacy assetOptions removed
+  // no-op
 
   const createMutation = useMutation({
     mutationFn: async (payload: CreateTestModel) =>
@@ -93,26 +94,7 @@ export default function ClassTestsPage() {
     },
   });
 
-  const attachMutation = useMutation({
-    mutationFn: async () =>
-      testsApi.attachAssets(classId!, selectedTestId!, selectedAssets),
-    onSuccess: async () => {
-      notifications.show({
-        title: 'Đã gán',
-        message: 'Gán nội dung thành công',
-        color: 'green',
-      });
-      closeAttach();
-      setSelectedAssets([]);
-      setSelectedTestId(null);
-    },
-    onError: (err: unknown) =>
-      notifications.show({
-        title: 'Lỗi',
-        message: err instanceof Error ? err.message : 'Không gán được',
-        color: 'red',
-      }),
-  });
+  // Removed attachMutation logic (deprecated)
 
   const rows = (tests || []).map((t: TestModel) => (
     <Table.Tr key={t.id}>
@@ -130,21 +112,39 @@ export default function ClassTestsPage() {
             ? `Kết thúc: ${new Date(t.endDate).toLocaleString()}`
             : 'Không thời gian kết thúc'}
         </Text>
+        <Text size='xs' c='dimmed'>
+          Loại: {t.type === 'essay' ? 'Tự luận' : 'Trắc nghiệm'}
+        </Text>
       </Table.Td>
       <Table.Td style={{ width: 140 }}>
         <Group gap='xs'>
-          <Tooltip label='Gán nội dung'>
-            <ActionIcon
-              variant='subtle'
-              color='violet'
-              onClick={() => {
-                setSelectedTestId(t.id);
-                openAttach();
-              }}
-            >
-              <LuFolderPlus />
-            </ActionIcon>
-          </Tooltip>
+          {t.type === 'essay' ? (
+            <Tooltip label='Quản lý câu hỏi tự luận'>
+              <ActionIcon
+                variant='subtle'
+                color='violet'
+                onClick={() => {
+                  setSelectedTestId(t.id);
+                  openEssay();
+                }}
+              >
+                <LuFolderPlus />
+              </ActionIcon>
+            </Tooltip>
+          ) : (
+            <Tooltip label='Nhập câu hỏi theo Tag'>
+              <ActionIcon
+                variant='subtle'
+                color='indigo'
+                onClick={() => {
+                  setSelectedTestId(t.id);
+                  openImport();
+                }}
+              >
+                <LuFolderPlus />
+              </ActionIcon>
+            </Tooltip>
+          )}
           <Tooltip label='Xoá (chưa hỗ trợ)'>
             <ActionIcon variant='subtle' color='red' disabled>
               <LuTrash2 />
@@ -158,6 +158,7 @@ export default function ClassTestsPage() {
   const [testName, setTestName] = useState('');
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
+  const [type, setType] = useState<'essay' | 'mcq'>('mcq');
 
   // Ownership & role checks
   const { data: me } = useQuery({
@@ -251,6 +252,15 @@ export default function ClassTestsPage() {
             value={testName}
             onChange={(e) => setTestName(e.currentTarget.value)}
           />
+          <Select
+            label='Loại bài kiểm tra'
+            value={type}
+            onChange={(v) => setType((v as 'essay' | 'mcq') || 'mcq')}
+            data={[
+              { value: 'mcq', label: 'Trắc nghiệm' },
+              { value: 'essay', label: 'Tự luận' },
+            ]}
+          />
           <DateTimePicker
             label='Thời gian bắt đầu'
             value={startDate}
@@ -295,6 +305,7 @@ export default function ClassTestsPage() {
                 }
                 createMutation.mutate({
                   name: testName.trim(),
+                  type,
                   startDate: startDate ? dayjs(startDate).toISOString() : null,
                   endDate: endDate ? dayjs(endDate).toISOString() : null,
                 });
@@ -308,51 +319,257 @@ export default function ClassTestsPage() {
         </Stack>
       </Drawer>
 
+      {/* Import by tags for MCQ */}
       <Modal
-        opened={attachOpened}
-        onClose={closeAttach}
-        title='Gán nội dung'
+        opened={importOpened}
+        onClose={() => {
+          closeImport();
+          setTagNames([]);
+          setPoints(1);
+          setStartOrder('');
+        }}
+        title='Nhập câu hỏi theo Tag'
         size='lg'
       >
         <Stack gap='md'>
-          <TextInput
-            placeholder='Tìm nội dung'
-            value={assetSearch}
-            onChange={(e) => setAssetSearch(e.currentTarget.value)}
-          />
           <MultiSelect
-            label='Chọn nội dung'
-            data={assetOptions}
-            value={selectedAssets}
-            onChange={setSelectedAssets}
+            label='Tag (tên)'
+            data={tagNames.map((t) => ({ value: t, label: t }))}
+            value={tagNames}
+            onChange={setTagNames}
             searchable
-            nothingFoundMessage='Không có nội dung'
-            placeholder='Chọn assets...'
+            placeholder='Nhập hoặc chọn tag'
+          />
+          <NumberInput
+            label='Điểm mỗi câu'
+            value={points}
+            onChange={(v) => setPoints(typeof v === 'number' ? v : 1)}
+            min={0}
+            step={0.5}
+            allowDecimal
+          />
+          <NumberInput
+            label='Vị trí bắt đầu'
+            value={startOrder}
+            onChange={(v) => setStartOrder(typeof v === 'number' ? v : '')}
+            min={1}
           />
           <Group justify='flex-end'>
-            <Button variant='default' onClick={closeAttach}>
+            <Button
+              variant='default'
+              onClick={() => {
+                closeImport();
+              }}
+            >
               Huỷ
             </Button>
             <Button
-              onClick={() => {
-                if (!selectedTestId) return;
-                if (!selectedAssets.length) {
+              onClick={async () => {
+                if (!classId || !selectedTestId) return;
+                if (!tagNames.length) {
                   notifications.show({
-                    title: 'Chưa chọn',
-                    message: 'Chọn ít nhất 1 nội dung',
+                    title: 'Thiếu tag',
+                    message: 'Nhập ít nhất 1 tag',
                     color: 'yellow',
                   });
                   return;
                 }
-                attachMutation.mutate();
+                try {
+                  const res = await testsApi.importByTags(
+                    classId,
+                    selectedTestId,
+                    {
+                      tagNames,
+                      points: points === '' ? null : Number(points),
+                      startOrder: startOrder === '' ? null : Number(startOrder),
+                    },
+                  );
+                  notifications.show({
+                    title: 'Đã nhập',
+                    message: `Đã thêm ${res?.inserted ?? ''} câu hỏi`,
+                    color: 'green',
+                  });
+                  closeImport();
+                } catch (err) {
+                  const axiosLike = err as {
+                    response?: { data?: { message?: string | string[] } };
+                    message?: string;
+                  };
+                  const serverMsg = axiosLike?.response?.data?.message;
+                  const msg = Array.isArray(serverMsg)
+                    ? serverMsg.join(', ')
+                    : serverMsg || axiosLike?.message || 'Không nhập được';
+                  notifications.show({
+                    title: 'Lỗi',
+                    message: msg,
+                    color: 'red',
+                  });
+                }
               }}
-              loading={attachMutation.status === 'pending'}
             >
-              Gán
+              Nhập
             </Button>
           </Group>
         </Stack>
       </Modal>
+
+      {/* Essay questions manager (minimal) */}
+      <EssayQuestionsDrawer
+        opened={essayOpened}
+        onClose={() => {
+          closeEssay();
+          setSelectedTestId(null);
+        }}
+        classId={classId!}
+        testId={selectedTestId}
+      />
     </div>
+  );
+}
+
+function EssayQuestionsDrawer({
+  opened,
+  onClose,
+  classId,
+  testId,
+}: {
+  opened: boolean;
+  onClose: () => void;
+  classId: string;
+  testId: string | null;
+}) {
+  const qc = useQueryClient();
+  const [prompt, setPrompt] = useState('');
+  const [displayOrder, setDisplayOrder] = useState<number | ''>('');
+
+  const listQuery = useQuery({
+    enabled: opened && !!testId,
+    queryKey: ['essay-questions', { classId, testId }],
+    queryFn: async () =>
+      testId ? testsApi.listEssayQuestions(classId, testId) : [],
+  });
+
+  const createMutation = useMutation({
+    mutationFn: async () =>
+      testsApi.createEssayQuestion(classId, testId!, {
+        prompt: prompt || undefined,
+        displayOrder: displayOrder === '' ? undefined : Number(displayOrder),
+      }),
+    onSuccess: async () => {
+      setPrompt('');
+      setDisplayOrder('');
+      await qc.invalidateQueries({
+        queryKey: ['essay-questions', { classId, testId }],
+      });
+      notifications.show({
+        title: 'Đã tạo',
+        message: 'Đã thêm câu hỏi',
+        color: 'green',
+      });
+    },
+    onError: (err: unknown) => {
+      const axiosLike = err as {
+        response?: { data?: { message?: string | string[] } };
+        message?: string;
+      };
+      const serverMsg = axiosLike?.response?.data?.message;
+      const msg = Array.isArray(serverMsg)
+        ? serverMsg.join(', ')
+        : serverMsg || axiosLike?.message || 'Không tạo được';
+      notifications.show({ title: 'Lỗi', message: msg, color: 'red' });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (qid: string) =>
+      testsApi.deleteEssayQuestion(classId, testId!, qid),
+    onSuccess: async () => {
+      await qc.invalidateQueries({
+        queryKey: ['essay-questions', { classId, testId }],
+      });
+      notifications.show({
+        title: 'Đã xoá',
+        message: 'Đã xoá câu hỏi',
+        color: 'green',
+      });
+    },
+    onError: () =>
+      notifications.show({
+        title: 'Lỗi',
+        message: 'Không xoá được',
+        color: 'red',
+      }),
+  });
+
+  return (
+    <Drawer
+      opened={opened}
+      onClose={onClose}
+      title='Câu hỏi tự luận'
+      position='right'
+      size='md'
+    >
+      <Stack gap='md'>
+        <TextInput
+          label='Nội dung'
+          value={prompt}
+          onChange={(e) => setPrompt(e.currentTarget.value)}
+        />
+        <NumberInput
+          label='Thứ tự hiển thị'
+          value={displayOrder}
+          onChange={(v) => setDisplayOrder(typeof v === 'number' ? v : '')}
+          min={1}
+        />
+        <Group justify='flex-end'>
+          <Button variant='default' onClick={onClose}>
+            Đóng
+          </Button>
+          <Button
+            onClick={() => createMutation.mutate()}
+            loading={createMutation.status === 'pending'}
+          >
+            Thêm
+          </Button>
+        </Group>
+        <Table striped withRowBorders>
+          <Table.Thead>
+            <Table.Tr>
+              <Table.Th>Thứ tự</Table.Th>
+              <Table.Th>Nội dung</Table.Th>
+              <Table.Th style={{ width: 80 }}>Xoá</Table.Th>
+            </Table.Tr>
+          </Table.Thead>
+          <Table.Tbody>
+            {(listQuery.data || []).map((q) => (
+              <Table.Tr key={q.id}>
+                <Table.Td>{q.displayOrder}</Table.Td>
+                <Table.Td>
+                  {q.prompt || <Text c='dimmed'>Không có nội dung</Text>}
+                </Table.Td>
+                <Table.Td>
+                  <ActionIcon
+                    color='red'
+                    variant='subtle'
+                    onClick={() => deleteMutation.mutate(q.id)}
+                  >
+                    <LuTrash2 />
+                  </ActionIcon>
+                </Table.Td>
+              </Table.Tr>
+            ))}
+            {!listQuery.data?.length && (
+              <Table.Tr>
+                <Table.Td colSpan={3}>
+                  <Text c='dimmed' ta='center'>
+                    Chưa có câu hỏi
+                  </Text>
+                </Table.Td>
+              </Table.Tr>
+            )}
+          </Table.Tbody>
+        </Table>
+      </Stack>
+    </Drawer>
   );
 }

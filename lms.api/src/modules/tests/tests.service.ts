@@ -455,6 +455,7 @@ export class TestsService {
       select: {
         id: true,
         name: true,
+        type: true,
         classId: true,
         userCreatedId: true,
         startDate: true,

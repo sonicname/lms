@@ -4,7 +4,9 @@ import {
   LuBookOpen,
   LuCircleUserRound,
   LuFileArchive,
+  LuFileQuestion,
   LuLogOut,
+  LuTarget,
 } from 'react-icons/lu';
 import { MdOutlineClass } from 'react-icons/md';
 import { getAuthStore } from '../../../auth/stores/auth-store';
@@ -40,8 +42,13 @@ export default function MenuSidebar() {
     },
     {
       label: 'Hỏi & Đáp',
-      icon: LuFileArchive,
+      icon: LuTarget,
       href: '/dashboard/qa',
+    },
+    userRole === 'teacher' && {
+      label: 'Ngân hàng câu hỏi',
+      icon: LuFileQuestion,
+      href: '/dashboard/quizz',
     },
   ].filter(Boolean) as {
     label: string;
