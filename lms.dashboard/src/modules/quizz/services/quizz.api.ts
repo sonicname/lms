@@ -49,4 +49,6 @@ export const quizzApi = {
     ),
   detachTag: (quizId: string, tagId: string) =>
     api.delete(`/quizzes/me/${quizId}/tags/${tagId}`),
+  // Global tags across user's quizzes
+  listAllTags: () => api.get<QuizTagModel[]>(`/quizzes/tags`),
 };

@@ -61,6 +61,16 @@ export const testsApi = {
       `/classes/${classId}/tests/${testId}/essay-questions/${questionId}`,
       payload,
     ),
+  attachEssayQuestionAssets: (
+    classId: string,
+    testId: string,
+    questionId: string,
+    assetIds: string[],
+  ) =>
+    api.post<any, { assetIds: string[] }>(
+      `/classes/${classId}/tests/${testId}/essay-questions/${questionId}/assets`,
+      { assetIds },
+    ),
   deleteEssayQuestion: (classId: string, testId: string, questionId: string) =>
     api.post(
       `/classes/${classId}/tests/${testId}/essay-questions/${questionId}/delete`,

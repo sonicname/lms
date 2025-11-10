@@ -224,6 +224,17 @@ export class QuizzesService {
     return { success: true };
   }
 
+  // List distinct tags across all quizzes owned by the user
+  async listAllTags(userId: string) {
+    // Fetch distinct tag ids & names for user's quizzes
+    const rows = await this.prisma.quizTags.findMany({
+      where: { quizzes: { some: { userId } } },
+      select: { id: true, name: true },
+      orderBy: { name: 'asc' },
+    });
+    return rows;
+  }
+
   async deleteChoice(userId: string, quizId: string, choiceId: string) {
     await this.ensureQuizOwned(userId, quizId);
     const choice = await this.prisma.choice.findUnique({

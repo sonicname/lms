@@ -159,4 +159,10 @@ export class QuizzesController {
   ) {
     return this.quizzes.detachTag(req.user!.id, quizId, tagId);
   }
+
+  // Global tags list for current user (for suggestions)
+  @Get('tags')
+  async listAllTags(@Req() req: Request & { user?: { id: string } }) {
+    return this.quizzes.listAllTags(req.user!.id);
+  }
 }
