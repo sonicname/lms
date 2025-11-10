@@ -12,11 +12,17 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import dayjs from 'dayjs';
 import { analyticsApi } from '../../analytics/services/analytics.api';
+import { useAuthStore } from '../../auth/stores/auth-store';
 
 export default function DashboardRootPage() {
+  const { getCurrentUserRole } = useAuthStore();
+
+  const userRole = getCurrentUserRole();
+
   const overviewQuery = useQuery({
     queryKey: ['analytics', 'admin', 'overview'],
     queryFn: () => analyticsApi.adminOverview(),
+    enabled: userRole === 'admin',
   });
 
   const engagementQuery = useQuery({
@@ -26,7 +32,16 @@ export default function DashboardRootPage() {
         dayjs().subtract(30, 'day').toDate(),
         new Date(),
       ),
+    enabled: userRole === 'admin',
   });
+
+  if (userRole !== 'admin') {
+    return (
+      <Stack align='center' justify='center' h='100%'>
+        <Title order={3}>Chào mừng LMS Portal</Title>
+      </Stack>
+    );
+  }
 
   const ov = overviewQuery.data;
   const eg = engagementQuery.data;
