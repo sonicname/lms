@@ -70,7 +70,7 @@ export default function QuestionDetailsDrawer({
                     <Stack
                       key={a.id}
                       gap={2}
-                      className='border rounded px-2 py-1'
+                      className='border border-neutral-200 rounded px-2 py-1'
                     >
                       <Text size='sm'>{a.content}</Text>
                       <Text size='xs' c='dimmed'>

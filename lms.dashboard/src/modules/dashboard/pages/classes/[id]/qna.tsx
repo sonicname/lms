@@ -5,6 +5,7 @@ import {
   Group,
   Pagination,
   Select,
+  Stack,
   Table,
   Text,
   Textarea,
@@ -13,6 +14,7 @@ import {
 import { useDisclosure } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import dayjs from 'dayjs';
 import { useMemo, useState } from 'react';
 import { LuMessageSquare } from 'react-icons/lu';
 import { useParams } from 'react-router-dom';
@@ -107,9 +109,24 @@ export default function ClassQnaPage() {
         message: 'Câu hỏi đã được trả lời',
         color: 'green',
       });
-      await qc.invalidateQueries({
-        queryKey: ['lessons', selectedLesson, 'questions'],
-      });
+      if (classId && selectedChapter && selectedLesson) {
+        await qc.invalidateQueries({
+          queryKey: [
+            'classes',
+            classId,
+            'chapters',
+            selectedChapter,
+            'lessons',
+            selectedLesson,
+            'questions',
+          ],
+        });
+      }
+      if (currentQuestion?.id) {
+        await qc.invalidateQueries({
+          queryKey: ['questions', currentQuestion.id, 'answers'],
+        });
+      }
       closeAnswer();
       setCurrentQuestion(null);
       setAnswerText('');
@@ -154,6 +171,16 @@ export default function ClassQnaPage() {
       )),
     [pagedQuestions, openAnswer],
   );
+
+  // Answers of current question (shown inside drawer)
+  const answersQuery = useQuery({
+    enabled: !!currentQuestion?.id,
+    queryKey: ['questions', currentQuestion?.id, 'answers'],
+    queryFn: () =>
+      currentQuestion?.id
+        ? qnaApi.listAnswers(currentQuestion.id)
+        : Promise.resolve([]),
+  });
 
   if (
     chaptersQuery.isLoading ||
@@ -253,6 +280,31 @@ export default function ClassQnaPage() {
         <div className='flex flex-col gap-3'>
           <Text fw={500}>Câu hỏi</Text>
           <Text c='dimmed'>{currentQuestion?.content}</Text>
+          <Stack gap='xs'>
+            <Text fw={500}>
+              Danh sách câu trả lời ({answersQuery.data?.length ?? 0})
+            </Text>
+            {answersQuery.isLoading && (
+              <Text size='sm'>Đang tải câu trả lời...</Text>
+            )}
+            {!answersQuery.isLoading && !answersQuery.data?.length && (
+              <Text size='sm' c='dimmed'>
+                Chưa có câu trả lời nào
+              </Text>
+            )}
+            {answersQuery.data?.map((a) => (
+              <div
+                key={a.id}
+                className='border border-neutral-200 rounded px-3 py-2'
+              >
+                <Text size='sm'>{a.content}</Text>
+                <Text size='xs' c='dimmed'>
+                  Thời gian đăng:{' '}
+                  {dayjs(a.createdAt).format('DD/MM/YYYY HH:mm')}
+                </Text>
+              </div>
+            ))}
+          </Stack>
           <Textarea
             label='Câu trả lời'
             placeholder='Nhập câu trả lời...'

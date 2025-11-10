@@ -10,10 +10,10 @@ export default function DashboardLayout() {
   }
 
   return (
-    <div className='w-full h-screen overflow-hidden flex'>
+    <div className='w-full h-screen overflow-x-hidden flex'>
       <MenuSidebar />
 
-      <div className='flex-1 p-4'>
+      <div className='flex-1 p-4 max-h-screen overflow-y-auto'>
         <Outlet />
       </div>
     </div>
