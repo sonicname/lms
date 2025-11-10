@@ -59,7 +59,13 @@ export default function MenuSidebar() {
       <div className={classes.header}>
         <Group justify='space-between'>
           LMS Admin Portal
-          <Code fw={700}>v3.1.2</Code>
+          <Code fw={700}>
+            {userRole === 'admin'
+              ? 'Admin'
+              : userRole === 'teacher'
+              ? 'Giáo viên'
+              : 'Học viên'}
+          </Code>
         </Group>
       </div>
 

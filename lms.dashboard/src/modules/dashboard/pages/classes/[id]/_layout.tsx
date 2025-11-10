@@ -40,6 +40,7 @@ export default function ClassDetailLayout() {
     if (location.pathname.startsWith(`${base}/students`)) return 'students';
     if (location.pathname.startsWith(`${base}/tests`)) return 'tests';
     if (location.pathname.startsWith(`${base}/lessons`)) return 'lessons';
+    if (location.pathname.startsWith(`${base}/qna`)) return 'qna';
     return 'details';
   })();
 
@@ -70,6 +71,7 @@ export default function ClassDetailLayout() {
           if (v === 'students') navigate(`${base}/students`);
           if (v === 'tests') navigate(`${base}/tests`);
           if (v === 'lessons') navigate(`${base}/lessons`);
+          if (v === 'qna') navigate(`${base}/qna`);
         }}
       >
         <Tabs.List>
@@ -77,6 +79,7 @@ export default function ClassDetailLayout() {
           <Tabs.Tab value='students'>Học sinh</Tabs.Tab>
           <Tabs.Tab value='tests'>Bài kiểm tra</Tabs.Tab>
           <Tabs.Tab value='lessons'>Bài học</Tabs.Tab>
+          <Tabs.Tab value='qna'>Q&A</Tabs.Tab>
         </Tabs.List>
       </Tabs>
 
