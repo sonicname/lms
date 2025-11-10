@@ -11,6 +11,7 @@ export const CreateTestDocs = () =>
         type: 'object',
         properties: {
           name: { type: 'string' },
+          type: { type: 'string', enum: ['essay', 'mcq'], nullable: true },
           startDate: { type: 'string', format: 'date-time', nullable: true },
           endDate: { type: 'string', format: 'date-time', nullable: true },
         },

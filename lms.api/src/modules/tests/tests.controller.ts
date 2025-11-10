@@ -15,13 +15,24 @@ import { Roles } from 'src/modules/auth/constants/roles.decorator';
 import { Role } from 'src/modules/auth/constants/roles.enum';
 import { JwtCookieAuthGuard } from 'src/modules/auth/guards/jwt-cookie.guard';
 import { RolesGuard } from 'src/modules/auth/guards/roles.guard';
-import { AttachTestAssetsDocs } from './docs/attach-assets.docs';
-import { CreateTestDocs } from './docs/create-test.docs';
-import { GetTestDocs } from './docs/get-test.docs';
-import { ListTestsDocs } from './docs/list-tests.docs';
-import { UpdateTestDocs } from './docs/update-test.docs';
+import {
+  AttachEssayQuestionAssetsDocs,
+  AttachTestAssetsDocs,
+  CreateEssayQuestionDocs,
+  CreateTestDocs,
+  DeleteEssayQuestionDocs,
+  GetTestDocs,
+  ImportQuizzesByTagsDocs,
+  ListEssayQuestionsDocs,
+  ListTestsDocs,
+  UpdateEssayQuestionDocs,
+  UpdateTestDocs,
+} from './docs';
 import { AttachAssetsDto } from './dtos/attach-assets.dto';
 import { CreateTestDto } from './dtos/create-test.dto';
+import { CreateEssayQuestionDto } from './dtos/essay/create-essay-question.dto';
+import { UpdateEssayQuestionDto } from './dtos/essay/update-essay-question.dto';
+import { ImportQuizzesByTagsDto } from './dtos/import-quizzes-by-tags.dto';
 import { UpdateTestDto } from './dtos/update-test.dto';
 import { TestsService } from './tests.service';
 
@@ -47,6 +58,20 @@ export class TestsController {
     return this.service.createTest(req.user!.id, classId, dto);
   }
 
+  // Import quizzes by tag(s) into MCQ test
+  @Post(':testId/import-quizzes')
+  @UseGuards(RolesGuard)
+  @Roles(Role.Teacher)
+  @ImportQuizzesByTagsDocs()
+  async importQuizzes(
+    @Req() req: Request & { user?: { id: string } },
+    @Param('classId') classId: string,
+    @Param('testId') testId: string,
+    @Body() dto: ImportQuizzesByTagsDto,
+  ) {
+    return this.service.importQuizzesByTags(req.user!.id, classId, testId, dto);
+  }
+
   @Patch(':testId')
   @UseGuards(RolesGuard)
   @Roles(Role.Teacher)
@@ -58,6 +83,91 @@ export class TestsController {
     @Body() dto: UpdateTestDto,
   ) {
     return this.service.updateTest(req.user!.id, classId, testId, dto);
+  }
+
+  // -------- Essay Questions CRUD --------
+  @Get(':testId/essay-questions')
+  @UseGuards(RolesGuard)
+  @Roles(Role.Admin, Role.Teacher, Role.Student)
+  @ListEssayQuestionsDocs()
+  async listEssayQuestions(
+    @Req() req: Request & { user?: { id: string } },
+    @Param('classId') classId: string,
+    @Param('testId') testId: string,
+  ) {
+    const role = await this.getRole(req);
+    return this.service.listEssayQuestions(req.user!.id, role, classId, testId);
+  }
+
+  @Post(':testId/essay-questions')
+  @UseGuards(RolesGuard)
+  @Roles(Role.Teacher)
+  @CreateEssayQuestionDocs()
+  async createEssayQuestion(
+    @Req() req: Request & { user?: { id: string } },
+    @Param('classId') classId: string,
+    @Param('testId') testId: string,
+    @Body() dto: CreateEssayQuestionDto,
+  ) {
+    return this.service.createEssayQuestion(req.user!.id, classId, testId, dto);
+  }
+
+  @Patch(':testId/essay-questions/:questionId')
+  @UseGuards(RolesGuard)
+  @Roles(Role.Teacher)
+  @UpdateEssayQuestionDocs()
+  async updateEssayQuestion(
+    @Req() req: Request & { user?: { id: string } },
+    @Param('classId') classId: string,
+    @Param('testId') testId: string,
+    @Param('questionId') questionId: string,
+    @Body() dto: UpdateEssayQuestionDto,
+  ) {
+    return this.service.updateEssayQuestion(
+      req.user!.id,
+      classId,
+      testId,
+      questionId,
+      dto,
+    );
+  }
+
+  @Post(':testId/essay-questions/:questionId/assets')
+  @UseGuards(RolesGuard)
+  @Roles(Role.Teacher)
+  @AttachEssayQuestionAssetsDocs()
+  async attachEssayAssets(
+    @Req() req: Request & { user?: { id: string } },
+    @Param('classId') classId: string,
+    @Param('testId') testId: string,
+    @Param('questionId') questionId: string,
+    @Body() dto: AttachAssetsDto,
+  ) {
+    return this.service.attachAssetsToEssayQuestion(
+      req.user!.id,
+      classId,
+      testId,
+      questionId,
+      dto.assetIds,
+    );
+  }
+
+  @Post(':testId/essay-questions/:questionId/delete')
+  @UseGuards(RolesGuard)
+  @Roles(Role.Teacher)
+  @DeleteEssayQuestionDocs()
+  async deleteEssayQuestion(
+    @Req() req: Request & { user?: { id: string } },
+    @Param('classId') classId: string,
+    @Param('testId') testId: string,
+    @Param('questionId') questionId: string,
+  ) {
+    return this.service.deleteEssayQuestion(
+      req.user!.id,
+      classId,
+      testId,
+      questionId,
+    );
   }
 
   @Post(':testId/assets')

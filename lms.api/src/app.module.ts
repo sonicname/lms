@@ -9,6 +9,7 @@ import { ClassesModule } from 'src/modules/classes/classes.module';
 import { CurriculumModule } from 'src/modules/curriculum/curriculum.module';
 import { ProfilesModule } from 'src/modules/profiles/profiles.module';
 import { QaModule } from 'src/modules/qa/qa.module';
+import { QuizzesModule } from 'src/modules/quizzes/quizzes.module';
 import { TestsModule } from 'src/modules/tests/tests.module';
 import { UsersModule } from 'src/modules/users/users.module';
 import { validate } from 'src/utils/env.validation';
@@ -30,6 +31,7 @@ import { validate } from 'src/utils/env.validation';
     QaModule,
     AnalyticsModule,
     ProfilesModule,
+    QuizzesModule,
   ],
 })
 export class AppModule {}

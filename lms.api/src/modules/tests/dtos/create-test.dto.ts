@@ -1,6 +1,7 @@
 import { Type } from 'class-transformer';
 import {
   IsDate,
+  IsIn,
   IsNotEmpty,
   IsOptional,
   IsString,
@@ -11,6 +12,11 @@ export class CreateTestDto {
   @IsString()
   @IsNotEmpty()
   name!: string;
+
+  @IsString()
+  @IsIn(['essay', 'mcq'])
+  @IsOptional()
+  type?: 'essay' | 'mcq';
 
   @ValidateIf((o) => o.startDate !== null && o.startDate !== undefined)
   @Type(() => Date)

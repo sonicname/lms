@@ -1,0 +1,11 @@
+export { AttachTestAssetsDocs } from './attach-assets.docs';
+export { CreateTestDocs } from './create-test.docs';
+export { AttachEssayQuestionAssetsDocs } from './essay/attach-essay-assets.docs';
+export { CreateEssayQuestionDocs } from './essay/create-essay-question.docs';
+export { DeleteEssayQuestionDocs } from './essay/delete-essay-question.docs';
+export { ListEssayQuestionsDocs } from './essay/list-essay-questions.docs';
+export { UpdateEssayQuestionDocs } from './essay/update-essay-question.docs';
+export { GetTestDocs } from './get-test.docs';
+export { ImportQuizzesByTagsDocs } from './import-quizzes-by-tags.docs';
+export { ListTestsDocs } from './list-tests.docs';
+export { UpdateTestDocs } from './update-test.docs';

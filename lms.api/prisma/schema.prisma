@@ -103,8 +103,30 @@ model Assets {
   quizId String?
   quiz   Quiz?   @relation(fields: [quizId], references: [id], onDelete: SetNull)
 
+  // Associated with an essay question (question images)
+  essayQuestionId String?
+  essayQuestion   EssayQuestion? @relation(fields: [essayQuestionId], references: [id], onDelete: SetNull)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+// Essay question for essay-type tests.
+model EssayQuestion {
+  id     String  @id @default(uuid())
+  prompt String?
+
+  displayOrder Int @default(1)
+
+  testId String
+  test   Test   @relation(fields: [testId], references: [id], onDelete: Cascade)
+
+  assets Assets[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([testId])
 }
 
 model Class {
@@ -149,6 +171,12 @@ enum EnrollmentStatus {
   approved
 }
 
+// Type of test
+enum TestType {
+  essay
+  mcq
+}
+
 model Chapter {
   id      String  @id @default(uuid())
   title   String
@@ -188,46 +216,6 @@ model Lesson {
   @@index([chapterId])
 }
 
-model Test {
-  id   String @id @default(uuid())
-  name String
-
-  userCreatedId String
-  userCreated   User   @relation(fields: [userCreatedId], references: [id], onDelete: Cascade)
-
-  classId String
-  class   Class  @relation(fields: [classId], references: [id], onDelete: Cascade)
-
-  startDate DateTime?
-  endDate   DateTime?
-
-  assets      Assets[]
-  submissions Submission[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([classId])
-}
-
-model Submission {
-  id String @id @default(uuid())
-
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  testId String
-  test   Test   @relation(fields: [testId], references: [id], onDelete: Cascade)
-
-  assets Assets[]
-
-  score    Float?
-  feedback String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
 model Question {
   id      String @id @default(uuid())
   title   String
@@ -263,6 +251,81 @@ model Answer {
   @@index([questionId])
 }
 
+model Test {
+  id   String @id @default(uuid())
+  name String
+
+  // test type: essay or mcq
+  type TestType @default(mcq)
+
+  userCreatedId String
+  userCreated   User   @relation(fields: [userCreatedId], references: [id], onDelete: Cascade)
+
+  classId String
+  class   Class  @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  startDate DateTime?
+  endDate   DateTime?
+
+  assets      Assets[]
+  submissions Submission[]
+
+  // Quizzes included in this test
+  testQuizzes TestQuiz[]
+
+  // Essay questions for essay-type tests
+  essayQuestions EssayQuestion[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([classId])
+}
+
+model Submission {
+  id String @id @default(uuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  testId String
+  test   Test   @relation(fields: [testId], references: [id], onDelete: Cascade)
+
+  assets Assets[]
+
+  score    Float?
+  feedback String?
+
+  // MCQ answers for quizzes in the test
+  answers SubmissionAnswer[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Student selected answer for a quiz inside a submission
+model SubmissionAnswer {
+  id String @id @default(uuid())
+
+  submissionId String
+  submission   Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+
+  quizId String
+  quiz   Quiz   @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  choiceId String?
+  choice   Choice? @relation(fields: [choiceId], references: [id], onDelete: SetNull)
+
+  isCorrect Boolean?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([submissionId, quizId])
+  @@index([quizId])
+  @@index([choiceId])
+}
+
 model QuizTags {
   id   String @id @default(uuid())
   name String @unique
@@ -282,7 +345,17 @@ model Quiz {
 
   choices Choice[]
 
+  // Back relation for submission answers (MCQ submissions)
+  submissionAnswers SubmissionAnswer[]
+
+  // Single correct choice for this quiz
+  correctChoiceId String? @unique
+  correctChoice   Choice? @relation("QuizCorrectChoice", fields: [correctChoiceId], references: [id], onDelete: SetNull)
+
   tags QuizTags[]
+
+  // Back relation to tests via TestQuiz
+  testQuizzes TestQuiz[]
 
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -292,13 +365,38 @@ model Quiz {
 }
 
 model Choice {
-  id        String  @id @default(uuid())
-  content   String
-  isCorrect Boolean @default(false)
+  id      String @id @default(uuid())
+  content String
+  // Belongs to a quiz
+  quizId  String
+  quiz    Quiz   @relation(fields: [quizId], references: [id], onDelete: Cascade)
 
-  quizzId String
-  quizz   Quiz   @relation(fields: [quizzId], references: [id], onDelete: Cascade)
+  // Back relation for the unique correct choice
+  correctForQuiz Quiz? @relation("QuizCorrectChoice")
+
+  // Back relation for selections in submissions
+  chosenBy SubmissionAnswer[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([quizId])
+}
+
+// Join table linking tests and quizzes (many-to-many)
+model TestQuiz {
+  testId String
+  quizId String
+
+  test Test @relation(fields: [testId], references: [id], onDelete: Cascade)
+  quiz Quiz @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  displayOrder Int    @default(1)
+  points       Float?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@id([testId, quizId])
+  @@index([quizId])
 }

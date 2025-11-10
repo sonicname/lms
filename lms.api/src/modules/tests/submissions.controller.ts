@@ -16,8 +16,10 @@ import { JwtCookieAuthGuard } from 'src/modules/auth/guards/jwt-cookie.guard';
 import { RolesGuard } from 'src/modules/auth/guards/roles.guard';
 import { GradeSubmissionDocs } from './docs/grade-submission.docs';
 import { ListSubmissionsDocs } from './docs/list-submissions.docs';
+import { SubmitMcqAnswersDocs } from './docs/submit-mcq-answers.docs';
 import { SubmitTestDocs } from './docs/submit-test.docs';
 import { GradeSubmissionDto } from './dtos/grade-submission.dto';
+import { SubmitMcqAnswersDto } from './dtos/submit-mcq.dto';
 import { SubmitTestDto } from './dtos/submit-test.dto';
 import { TestsService } from './tests.service';
 
@@ -40,6 +42,25 @@ export class SubmissionsController {
     @Body() dto: SubmitTestDto,
   ) {
     return this.service.submitTest(req.user!.id, classId, testId, dto.assetIds);
+  }
+
+  // Student submits MCQ answers
+  @Post('mcq')
+  @UseGuards(RolesGuard)
+  @Roles(Role.Student)
+  @SubmitMcqAnswersDocs()
+  async submitMcq(
+    @Req() req: Request & { user?: { id: string } },
+    @Param('classId') classId: string,
+    @Param('testId') testId: string,
+    @Body() dto: SubmitMcqAnswersDto,
+  ) {
+    return this.service.submitMcqAnswers(
+      req.user!.id,
+      classId,
+      testId,
+      dto.answers,
+    );
   }
 
   // Teacher lists submissions
