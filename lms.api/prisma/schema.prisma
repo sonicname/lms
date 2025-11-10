@@ -31,6 +31,7 @@ model User {
   submissions      Submission[]
   questions        Question[]
   answers          Answer[]
+  quizzes          Quiz[]
 
   profile Profile?
 
@@ -98,6 +99,9 @@ model Assets {
 
   submissionId String?
   submission   Submission? @relation(fields: [submissionId], references: [id], onDelete: SetNull)
+
+  quizId String?
+  quiz   Quiz?   @relation(fields: [quizId], references: [id], onDelete: SetNull)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -257,4 +261,44 @@ model Answer {
   updatedAt DateTime @updatedAt
 
   @@index([questionId])
+}
+
+model QuizTags {
+  id   String @id @default(uuid())
+  name String @unique
+
+  quizzes Quiz[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Quiz {
+  id      String  @id @default(uuid())
+  title   String
+  content String?
+
+  assets Assets[]
+
+  choices Choice[]
+
+  tags QuizTags[]
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Choice {
+  id        String  @id @default(uuid())
+  content   String
+  isCorrect Boolean @default(false)
+
+  quizzId String
+  quizz   Quiz   @relation(fields: [quizzId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
