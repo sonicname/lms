@@ -17,7 +17,13 @@ import { notifications } from '@mantine/notifications';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import appEnv from 'app-env';
 import { useMemo, useState } from 'react';
-import { LuExternalLink, LuEye, LuTrash2, LuUpload, LuTags } from 'react-icons/lu';
+import {
+  LuExternalLink,
+  LuEye,
+  LuTags,
+  LuTrash2,
+  LuUpload,
+} from 'react-icons/lu';
 import SkeletonCard from '../../../../components/skeleton-card';
 import AssetDeleteModal from '../../../assets/components/asset-delete-modal';
 import AssetDetailsDrawer from '../../../assets/components/asset-details-drawer';

@@ -97,6 +97,15 @@ export class AssetsController {
     return this.assetsService.list(req.user!.id, query);
   }
 
+  @Get('tags')
+  @ListAssetTagsDocs()
+  async listTags(
+    @Req() req: Request & { user?: { id: string } },
+    @Query() query: ListAssetsTagsDto,
+  ) {
+    return this.assetsService.listTags(req.user!.id, query.search);
+  }
+
   @Get(':id')
   @GetAssetDocs()
   async getById(
@@ -116,14 +125,6 @@ export class AssetsController {
   }
 
   // ====== Assets Tags CRUD ======
-  @Get('tags')
-  @ListAssetTagsDocs()
-  async listTags(
-    @Req() req: Request & { user?: { id: string } },
-    @Query() query: ListAssetsTagsDto,
-  ) {
-    return this.assetsService.listTags(req.user!.id, query.search);
-  }
 
   @Post('tags')
   @CreateAssetTagDocs()
