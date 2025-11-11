@@ -119,6 +119,18 @@ export class TestsService {
     });
   }
 
+  async deleteTest(teacherId: string, classId: string, testId: string) {
+    await this.ensureTeacherOwnsClass(teacherId, classId);
+    const test = await this.prisma.test.findUnique({
+      where: { id: testId },
+      select: { classId: true },
+    });
+    if (!test || test.classId !== classId)
+      throw new NotFoundException('Test not found');
+    await this.prisma.test.delete({ where: { id: testId } });
+    return { success: true };
+  }
+
   // ----- Essay Questions CRUD -----
   async listEssayQuestions(
     actorId: string,

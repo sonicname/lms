@@ -53,6 +53,7 @@ import type {
 } from '../../../../assets/models/asset.model';
 import { assetsApi } from '../../../../assets/services/assets.api';
 // import { assetsApi } from '../../../../assets/services/assets.api';
+import { useAuthStore } from '../../../../auth/stores/auth-store';
 import { classesApi } from '../../../../classes/services/classes.api';
 import { quizzApi } from '../../../../quizz/services/quizz.api';
 import { TestsQueryKey } from '../../../../tests/constants/tests-query-key';
@@ -91,6 +92,8 @@ function TagsSelect({
 
 export default function ClassTestsPage() {
   const { id: classId } = useParams();
+  const { getCurrentUserRole } = useAuthStore();
+  const currentUserRole = getCurrentUserRole();
   const [createOpened, { open: openCreate, close: closeCreate }] =
     useDisclosure(false);
   // Removed legacy asset attach (replaced by import & essay management)
@@ -154,6 +157,31 @@ export default function ClassTestsPage() {
 
   // Removed attachMutation logic (deprecated)
 
+  const deleteTestMutation = useMutation({
+    mutationFn: async (testId: string) => testsApi.delete(classId!, testId),
+    onSuccess: async () => {
+      notifications.show({
+        title: 'Đã xoá',
+        message: 'Đã xoá bài kiểm tra',
+        color: 'green',
+      });
+      await qc.invalidateQueries({
+        queryKey: classId ? TestsQueryKey.list(classId) : undefined,
+      });
+    },
+    onError: (err: unknown) => {
+      const axiosLike = err as {
+        response?: { data?: { message?: string | string[] } };
+        message?: string;
+      };
+      const serverMsg = axiosLike?.response?.data?.message;
+      const msg = Array.isArray(serverMsg)
+        ? serverMsg.join(', ')
+        : serverMsg || axiosLike?.message || 'Không xoá được';
+      notifications.show({ title: 'Lỗi', message: msg, color: 'red' });
+    },
+  });
+
   const rows = (tests || []).map((t: TestModel) => (
     <Table.Tr key={t.id}>
       <Table.Td>
@@ -185,6 +213,7 @@ export default function ClassTestsPage() {
                   setSelectedTestId(t.id);
                   openEssay();
                 }}
+                disabled={currentUserRole !== 'teacher'}
               >
                 <LuFolderPlus />
               </ActionIcon>
@@ -198,13 +227,27 @@ export default function ClassTestsPage() {
                   setSelectedTestId(t.id);
                   openImport();
                 }}
+                disabled={currentUserRole !== 'teacher'}
               >
                 <LuFolderPlus />
               </ActionIcon>
             </Tooltip>
           )}
-          <Tooltip label='Xoá (chưa hỗ trợ)'>
-            <ActionIcon variant='subtle' color='red' disabled>
+          <Tooltip label='Xoá bài kiểm tra'>
+            <ActionIcon
+              variant='subtle'
+              color='red'
+              onClick={() => {
+                if (currentUserRole !== 'teacher') return;
+                const confirmed = window.confirm(
+                  'Bạn chắc chắn muốn xoá bài kiểm tra này?',
+                );
+                if (!confirmed) return;
+                deleteTestMutation.mutate(t.id);
+              }}
+              loading={deleteTestMutation.status === 'pending'}
+              disabled={currentUserRole !== 'teacher'}
+            >
               <LuTrash2 />
             </ActionIcon>
           </Tooltip>

@@ -18,11 +18,14 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import { LuCheck, LuPlus, LuUserMinus, LuX } from 'react-icons/lu';
 import { useParams } from 'react-router-dom';
+import { useAuthStore } from '../../../../auth/stores/auth-store';
 import { ClassesQueryKey } from '../../../../classes/constants/classes-query-key';
 import { classesApi } from '../../../../classes/services/classes.api';
 
 export default function ClassStudentsPage() {
   const { id } = useParams();
+  const { getCurrentUserRole } = useAuthStore();
+  const currentUserRole = getCurrentUserRole();
   const [status, setStatus] = useState<'pending' | 'approved' | 'all'>('all');
   const [page, setPage] = useState(1);
   const qc = useQueryClient();
@@ -212,6 +215,7 @@ export default function ClassStudentsPage() {
                         color='green'
                         variant='subtle'
                         onClick={() => approveMutation.mutate(s.studentId)}
+                        disabled={currentUserRole !== 'teacher'}
                       >
                         <LuCheck />
                       </ActionIcon>
@@ -221,6 +225,7 @@ export default function ClassStudentsPage() {
                         color='red'
                         variant='subtle'
                         onClick={() => rejectMutation.mutate(s.studentId)}
+                        disabled={currentUserRole !== 'teacher'}
                       >
                         <LuX />
                       </ActionIcon>
@@ -233,6 +238,7 @@ export default function ClassStudentsPage() {
                       color='red'
                       variant='subtle'
                       onClick={() => kickMutation.mutate(s.studentId)}
+                      disabled={currentUserRole !== 'teacher'}
                     >
                       <LuUserMinus />
                     </ActionIcon>
@@ -243,7 +249,7 @@ export default function ClassStudentsPage() {
           </Table.Tr>
         ),
       ),
-    [list, approveMutation, rejectMutation, kickMutation],
+    [list, approveMutation, rejectMutation, kickMutation, currentUserRole],
   );
 
   return (
@@ -262,7 +268,11 @@ export default function ClassStudentsPage() {
             }
           />
         </Group>
-        <Button leftSection={<LuPlus />} onClick={openAdd}>
+        <Button
+          leftSection={<LuPlus />}
+          onClick={openAdd}
+          disabled={currentUserRole !== 'teacher'}
+        >
           Thêm học sinh
         </Button>
       </Group>

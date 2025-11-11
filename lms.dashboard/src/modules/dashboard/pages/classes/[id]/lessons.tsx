@@ -42,6 +42,7 @@ import {
 } from 'react-icons/lu';
 import { useParams } from 'react-router-dom';
 import { assetsApi } from '../../../../assets/services/assets.api';
+import { useAuthStore } from '../../../../auth/stores/auth-store';
 import type {
   ChapterModel,
   LessonModel,
@@ -54,6 +55,9 @@ export default function LessonManagerPage() {
   const [expanded, setExpanded] = useState<string | null>(null);
   const [chaptersOrdered, setChaptersOrdered] = useState<ChapterModel[]>([]);
   const [lessonsOrdered, setLessonsOrdered] = useState<LessonModel[]>([]);
+
+  const { getCurrentUserRole } = useAuthStore();
+  const currentUserRole = getCurrentUserRole();
 
   const [createOpen, setCreateOpen] = useState(false);
   const [editChapter, setEditChapter] = useState<ChapterModel | null>(null);
@@ -402,9 +406,11 @@ export default function LessonManagerPage() {
       >
         <Group justify='space-between'>
           <Group gap='sm'>
-            <span {...attributes} {...listeners}>
-              <LuGripVertical size={18} style={{ cursor: 'grab' }} />
-            </span>
+            {currentUserRole === 'teacher' && (
+              <span {...attributes} {...listeners}>
+                <LuGripVertical size={18} style={{ cursor: 'grab' }} />
+              </span>
+            )}
             <div
               onClick={() => setExpanded(isExpanded ? null : c.id)}
               style={{ cursor: 'pointer' }}
@@ -421,6 +427,7 @@ export default function LessonManagerPage() {
               variant='light'
               leftSection={<LuBookPlus size={16} />}
               onClick={() => setNewLessonChapter(c.id)}
+              disabled={currentUserRole !== 'teacher'}
             >
               Thêm bài
             </Button>
@@ -429,6 +436,7 @@ export default function LessonManagerPage() {
               variant='light'
               leftSection={<LuPencil size={16} />}
               onClick={() => setEditChapter(c)}
+              disabled={currentUserRole !== 'teacher'}
             >
               Sửa
             </Button>
@@ -472,9 +480,11 @@ export default function LessonManagerPage() {
       <Table.Tr ref={setNodeRef} style={style}>
         <Table.Td>
           <Group gap='xs'>
-            <span {...attributes} {...listeners}>
-              <LuGripVertical size={16} style={{ cursor: 'grab' }} />
-            </span>
+            {currentUserRole === 'teacher' && (
+              <span {...attributes} {...listeners}>
+                <LuGripVertical size={16} style={{ cursor: 'grab' }} />
+              </span>
+            )}
             <div>
               <Text fw={500} size='sm'>
                 {lesson.title}
@@ -511,6 +521,7 @@ export default function LessonManagerPage() {
             onClick={() =>
               setEditLesson({ chapterId: expanded!, lesson: lesson })
             }
+            disabled={currentUserRole !== 'teacher'}
           >
             Sửa
           </Button>
@@ -523,6 +534,7 @@ export default function LessonManagerPage() {
               setAttachLesson({ chapterId: expanded!, lessonId: lesson.id })
             }
             title='Gán nội dung'
+            disabled={currentUserRole !== 'teacher'}
           >
             <LuFolderPlus />
           </ActionIcon>
@@ -575,6 +587,7 @@ export default function LessonManagerPage() {
           <Button
             leftSection={<LuPlus size={16} />}
             onClick={() => setCreateOpen(true)}
+            disabled={currentUserRole !== 'teacher'}
           >
             Tạo chương
           </Button>

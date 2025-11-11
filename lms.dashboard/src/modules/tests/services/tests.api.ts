@@ -17,6 +17,8 @@ export const testsApi = {
       `/classes/${classId}/tests/${testId}`,
       payload,
     ),
+  delete: (classId: string, testId: string) =>
+    api.delete<any>(`/classes/${classId}/tests/${testId}`),
   attachAssets: (classId: string, testId: string, assetIds: string[]) =>
     api.post<any, { assetIds: string[] }>(
       `/classes/${classId}/tests/${testId}/assets`,

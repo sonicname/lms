@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
@@ -83,6 +84,17 @@ export class TestsController {
     @Body() dto: UpdateTestDto,
   ) {
     return this.service.updateTest(req.user!.id, classId, testId, dto);
+  }
+
+  @Delete(':testId')
+  @UseGuards(RolesGuard)
+  @Roles(Role.Teacher)
+  async delete(
+    @Req() req: Request & { user?: { id: string } },
+    @Param('classId') classId: string,
+    @Param('testId') testId: string,
+  ) {
+    return this.service.deleteTest(req.user!.id, classId, testId);
   }
 
   // -------- Essay Questions CRUD --------
