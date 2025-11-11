@@ -733,7 +733,7 @@ function EssayQuestionsDrawer({
       onClose={onClose}
       title='Câu hỏi tự luận'
       position='right'
-      size='md'
+      size='lg'
     >
       <Stack gap='md'>
         <TextInput
@@ -783,7 +783,7 @@ function EssayQuestionsDrawer({
               <Table.Th style={{ width: 70 }}>Thứ tự</Table.Th>
               <Table.Th>Nội dung</Table.Th>
               <Table.Th>Tập tin</Table.Th>
-              <Table.Th style={{ width: 210 }}>Hành động</Table.Th>
+              <Table.Th style={{ width: 120 }}>Hành động</Table.Th>
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>

@@ -32,6 +32,7 @@ model User {
   questions        Question[]
   answers          Answer[]
   quizzes          Quiz[]
+  assetsTags       AssetsTag[]
 
   profile Profile?
 
@@ -69,16 +70,25 @@ model Session {
 }
 
 model AssetsTag {
-  id     String   @id @default(nanoid())
-  name   String   @unique
+  id   String @id @default(nanoid())
+  name String
+
   assets Assets[]
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@unique([userId, name], name: "user_tag_unique")
 }
 
 model Assets {
-  id       String @id @default(uuid())
+  id String @id @default(uuid())
+
+  name String @default("")
+
   fileType String
   filename String
   mimetype String
@@ -109,6 +119,10 @@ model Assets {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([userId, lessonId, testId, submissionId, quizId, essayQuestionId])
+  @@index([filename, url])
+  @@index([name])
 }
 
 // Essay question for essay-type tests.

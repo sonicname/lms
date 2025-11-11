@@ -21,7 +21,6 @@ import {
   Drawer,
   Group,
   Modal,
-  MultiSelect,
   Table,
   Text,
   Textarea,
@@ -41,7 +40,7 @@ import {
   LuPlus,
 } from 'react-icons/lu';
 import { useParams } from 'react-router-dom';
-import { assetsApi } from '../../../../assets/services/assets.api';
+import AssetsMultiPicker from '../../../../assets/components/assets-multi-picker';
 import { useAuthStore } from '../../../../auth/stores/auth-store';
 import type {
   ChapterModel,
@@ -69,7 +68,6 @@ export default function LessonManagerPage() {
     chapterId: string;
     lessonId: string;
   } | null>(null);
-  const [assetSearch, setAssetSearch] = useState('');
   const [selectedAssets, setSelectedAssets] = useState<string[]>([]);
 
   const chaptersQuery = useQuery({
@@ -114,17 +112,7 @@ export default function LessonManagerPage() {
     }
   }, [lessonsQuery.data, expanded]);
 
-  const assetsQuery = useQuery({
-    enabled: !!attachLesson && !!classId,
-    queryKey: ['assets', 'for-lesson', { classId, search: assetSearch }],
-    queryFn: async () => assetsApi.list({ search: assetSearch, page: 1 }),
-  });
-  const assetOptions = (assetsQuery.data?.data || []).map(
-    (a: { id: string; filename?: string }) => ({
-      value: a.id,
-      label: a.filename || a.id,
-    }),
-  );
+  // asset search moved into AssetsMultiPicker component
 
   const createChapterMutation = useMutation({
     mutationFn: (payload: { title: string; content?: string | null }) =>
@@ -224,7 +212,6 @@ export default function LessonManagerPage() {
       }
       setAttachLesson(null);
       setSelectedAssets([]);
-      setAssetSearch('');
     },
     onError: (err: unknown) => {
       const apiMessage =
@@ -710,27 +697,15 @@ export default function LessonManagerPage() {
         onClose={() => {
           setAttachLesson(null);
           setSelectedAssets([]);
-          setAssetSearch('');
         }}
         title='Gán nội dung cho bài học'
         size='lg'
       >
         <div className='flex flex-col gap-3'>
-          <TextInput
-            placeholder='Tìm nội dung...'
-            value={assetSearch}
-            onChange={(e) => setAssetSearch(e.currentTarget.value)}
-          />
-          <MultiSelect
-            label='Chọn nội dung'
-            data={assetOptions}
+          <AssetsMultiPicker
+            classId={classId}
             value={selectedAssets}
             onChange={setSelectedAssets}
-            searchable
-            nothingFoundMessage={
-              assetsQuery.isFetching ? 'Đang tải...' : 'Không có nội dung'
-            }
-            placeholder='Chọn nội dung'
           />
           <Group justify='flex-end'>
             <Button
@@ -738,7 +713,6 @@ export default function LessonManagerPage() {
               onClick={() => {
                 setAttachLesson(null);
                 setSelectedAssets([]);
-                setAssetSearch('');
               }}
             >
               Huỷ

@@ -9,6 +9,7 @@ export type AssetModel = {
   userId: string;
   createdAt: string;
   updatedAt: string;
+  assetsTags?: { id: string; name: string }[];
 };
 
 export type ListAssetFilterModel = {

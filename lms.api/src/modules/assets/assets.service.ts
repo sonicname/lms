@@ -1,10 +1,15 @@
 import {
+  ConflictException,
   ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from 'src/databases/prisma.service';
 import type { Prisma } from 'src/generated/prisma/client';
+import {
+  CreateAssetsTagDto,
+  UpdateAssetsTagDto,
+} from 'src/modules/assets/dtos/assets-tag.dto';
 import { Role } from 'src/modules/auth/constants/roles.enum';
 import { ListAssetsDto } from './dtos/list-assets.dto';
 
@@ -51,6 +56,7 @@ export class AssetsService {
         userId: true,
         createdAt: true,
         updatedAt: true,
+        assetsTags: { select: { id: true, name: true } },
       },
     });
   }
@@ -105,6 +111,7 @@ export class AssetsService {
           userId: true,
           createdAt: true,
           updatedAt: true,
+          assetsTags: { select: { id: true, name: true } },
         },
       }),
       this.prisma.assets.count({ where }),
@@ -122,7 +129,23 @@ export class AssetsService {
     if (!asset) throw new NotFoundException('Asset not found');
     if (role !== Role.Admin && asset.userId !== userId)
       throw new ForbiddenException('Not allowed');
-    return asset;
+    // Return with tags for convenience
+    return this.prisma.assets.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        fileType: true,
+        filename: true,
+        mimetype: true,
+        fileSize: true,
+        url: true,
+        type: true,
+        userId: true,
+        createdAt: true,
+        updatedAt: true,
+        assetsTags: { select: { id: true, name: true } },
+      },
+    });
   }
 
   async delete(userId: string, id: string) {
@@ -140,5 +163,117 @@ export class AssetsService {
       if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
     } catch {}
     return { success: true };
+  }
+
+  // ========== Tags CRUD ==========
+  async listTags(userId: string, search?: string) {
+    const role = await this.getUserRole(userId);
+    const where: Prisma.AssetsTagWhereInput = {};
+    if (role !== Role.Admin) (where as any).userId = userId;
+    if (search) where.name = { contains: search, mode: 'insensitive' } as any;
+    return this.prisma.assetsTag.findMany({
+      where,
+      orderBy: { name: 'asc' },
+      select: { id: true, name: true },
+    });
+  }
+
+  async createTag(userId: string, dto: CreateAssetsTagDto) {
+    try {
+      const created = await this.prisma.assetsTag.create({
+        data: { name: dto.name.trim(), userId },
+        select: { id: true, name: true },
+      });
+      return created;
+    } catch (e: any) {
+      if (e?.code === 'P2002') {
+        throw new ConflictException('Tag name already exists');
+      }
+      throw e;
+    }
+  }
+
+  async updateTag(userId: string, id: string, dto: UpdateAssetsTagDto) {
+    const role = await this.getUserRole(userId);
+    const existing = await this.prisma.assetsTag.findUnique({
+      where: { id },
+      select: { id: true, userId: true },
+    });
+    if (!existing) throw new NotFoundException('Tag not found');
+    if (role !== Role.Admin && existing.userId !== userId)
+      throw new ForbiddenException('Not allowed');
+    try {
+      return await this.prisma.assetsTag.update({
+        where: { id },
+        data: { name: dto.name.trim() },
+        select: { id: true, name: true },
+      });
+    } catch (e: any) {
+      if (e?.code === 'P2002') {
+        throw new ConflictException('Tag name already exists');
+      }
+      throw e;
+    }
+  }
+
+  async deleteTag(userId: string, id: string) {
+    const role = await this.getUserRole(userId);
+    const existing = await this.prisma.assetsTag.findUnique({
+      where: { id },
+      select: { id: true, userId: true },
+    });
+    if (!existing) throw new NotFoundException('Tag not found');
+    if (role !== Role.Admin && existing.userId !== userId)
+      throw new ForbiddenException('Not allowed');
+    await this.prisma.assetsTag.delete({ where: { id } });
+    return { success: true };
+  }
+
+  // Attach multiple tags (by tag IDs) to an asset owned by user (admin can attach any)
+  async attachTags(userId: string, assetId: string, tagIds: string[]) {
+    if (!tagIds?.length) return this.getById(userId, assetId);
+    const role = await this.getUserRole(userId);
+    const asset = await this.prisma.assets.findUnique({
+      where: { id: assetId },
+      select: { id: true, userId: true },
+    });
+    if (!asset) throw new NotFoundException('Asset not found');
+    if (role !== Role.Admin && asset.userId !== userId)
+      throw new ForbiddenException('Not allowed');
+    // Ensure tags belong to user (unless admin)
+    if (role !== Role.Admin) {
+      const count = await this.prisma.assetsTag.count({
+        where: { id: { in: tagIds }, userId },
+      });
+      if (count !== tagIds.length)
+        throw new ForbiddenException('Some tags not owned by user');
+    }
+    await this.prisma.assets.update({
+      where: { id: assetId },
+      data: {
+        assetsTags: {
+          connect: tagIds.map((id) => ({ id })),
+        },
+      },
+      select: { id: true },
+    });
+    return this.getById(userId, assetId);
+  }
+
+  async detachTag(userId: string, assetId: string, tagId: string) {
+    const role = await this.getUserRole(userId);
+    const asset = await this.prisma.assets.findUnique({
+      where: { id: assetId },
+      select: { id: true, userId: true },
+    });
+    if (!asset) throw new NotFoundException('Asset not found');
+    if (role !== Role.Admin && asset.userId !== userId)
+      throw new ForbiddenException('Not allowed');
+    await this.prisma.assets.update({
+      where: { id: assetId },
+      data: { assetsTags: { disconnect: { id: tagId } } },
+      select: { id: true },
+    });
+    return this.getById(userId, assetId);
   }
 }

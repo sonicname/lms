@@ -22,4 +22,21 @@ export const assetsApi = {
     });
   },
   delete: (id: string) => api.delete<any>(`${basePrefix}/${id}`),
+  // Tags
+  listTags: (search?: string) =>
+    api.get<{ id: string; name: string }[]>(`${basePrefix}/tags`, {
+      params: search ? { search } : undefined,
+    }),
+  createTag: (name: string) =>
+    api.post<{ id: string; name: string }>(`${basePrefix}/tags`, { name }),
+  updateTag: (id: string, name: string) =>
+    api.patch<{ id: string; name: string }>(`${basePrefix}/tags/${id}`, {
+      name,
+    }),
+  deleteTag: (id: string) =>
+    api.delete<{ success: boolean }>(`${basePrefix}/tags/${id}`),
+  attachTags: (assetId: string, tagIds: string[]) =>
+    api.post<AssetModel>(`${basePrefix}/${assetId}/tags`, { tagIds }),
+  detachTag: (assetId: string, tagId: string) =>
+    api.delete<AssetModel>(`${basePrefix}/${assetId}/tags/${tagId}`),
 };

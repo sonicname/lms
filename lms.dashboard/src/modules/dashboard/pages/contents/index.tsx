@@ -3,6 +3,7 @@ import {
   Avatar,
   Badge,
   Button,
+  Drawer,
   Flex,
   Group,
   Pagination,
@@ -16,10 +17,11 @@ import { notifications } from '@mantine/notifications';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import appEnv from 'app-env';
 import { useMemo, useState } from 'react';
-import { LuExternalLink, LuEye, LuTrash2, LuUpload } from 'react-icons/lu';
+import { LuExternalLink, LuEye, LuTrash2, LuUpload, LuTags } from 'react-icons/lu';
 import SkeletonCard from '../../../../components/skeleton-card';
 import AssetDeleteModal from '../../../assets/components/asset-delete-modal';
 import AssetDetailsDrawer from '../../../assets/components/asset-details-drawer';
+import AssetTagManager from '../../../assets/components/asset-tag-manager';
 import AssetUploadDrawer from '../../../assets/components/asset-upload-drawer';
 import { AssetsQueryKey } from '../../../assets/constants/assets-query-key';
 import type {
@@ -35,6 +37,8 @@ export default function ContentManagerPage() {
   });
   const [search, setSearch] = useState<string>('');
   const [debouncedSearch] = useDebouncedValue(search, 300);
+  const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const [tagsOpen, { open: openTags, close: closeTags }] = useDisclosure(false);
   const [deleteOpened, { open: openDelete, close: closeDelete }] =
     useDisclosure(false);
   const [uploadOpened, { open: openUpload, close: closeUpload }] =
@@ -53,7 +57,14 @@ export default function ContentManagerPage() {
     queryFn: async () => assetsApi.list({ ...filter, search: debouncedSearch }),
   });
 
-  const assets = useMemo(() => data?.data ?? [], [data]);
+  const assets = useMemo(() => {
+    const list = data?.data ?? [];
+    if (!selectedTag) return list;
+    // client-side filter by tag name
+    return list.filter((a) =>
+      (a.assetsTags || []).some((t) => t.name === selectedTag),
+    );
+  }, [data, selectedTag]);
   const meta = data?.meta ?? { page: 1, limit: 10, total: 0, totalPages: 1 };
 
   const deleteMutation = useMutation({
@@ -153,7 +164,7 @@ export default function ContentManagerPage() {
 
   return (
     <div className='p-4 flex flex-col gap-y-2'>
-      <Flex justify='space-between'>
+      <Flex justify='space-between' align='center'>
         <TextInput
           placeholder='Tìm theo tên hoặc loại...'
           value={search}
@@ -165,9 +176,14 @@ export default function ContentManagerPage() {
           }}
           w={300}
         />
-        <Button leftSection={<LuUpload />} onClick={openUpload}>
-          Tải lên
-        </Button>
+        <Group>
+          <Button leftSection={<LuTags />} variant='light' onClick={openTags}>
+            Tag
+          </Button>
+          <Button leftSection={<LuUpload />} onClick={openUpload}>
+            Tải lên
+          </Button>
+        </Group>
       </Flex>
 
       <Table striped withTableBorder withRowBorders highlightOnHover>
@@ -204,6 +220,22 @@ export default function ContentManagerPage() {
           onChange={(page) => setFilter((f) => ({ ...f, page }))}
         />
       </Group>
+
+      <Drawer
+        opened={tagsOpen}
+        onClose={closeTags}
+        title='Quản lý & lọc theo Tag'
+        position='left'
+        size='md'
+      >
+        <AssetTagManager
+          currentFilter={selectedTag}
+          onSelectFilter={(tag) => {
+            setSelectedTag(tag);
+            setFilter((f) => ({ ...f, page: 1 }));
+          }}
+        />
+      </Drawer>
 
       <AssetDeleteModal
         opened={deleteOpened}
