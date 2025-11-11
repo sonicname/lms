@@ -3,14 +3,18 @@ import {
   Drawer,
   FileInput,
   Group,
+  MultiSelect,
   Select,
   Stack,
   TextInput,
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
+import { useDebouncedValue } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
 import { AssetsQueryKey } from '../constants/assets-query-key';
+import type { AssetModel } from '../models/asset.model';
 import { assetsApi } from '../services/assets.api';
 
 export type AssetUploadDrawerProps = {
@@ -34,13 +38,42 @@ export default function AssetUploadDrawer({
     },
   });
 
-  const uploadMutation = useMutation({
-    mutationFn: async (vars: { file: File; fileType: string; type: string }) =>
+  // Tag selection state for upload
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [tagSearch, setTagSearch] = useState('');
+  const [debouncedTagSearch] = useDebouncedValue(tagSearch, 300);
+  const tagsQuery = useQuery({
+    queryKey: ['assets', 'tags', { search: debouncedTagSearch }],
+    queryFn: () => assetsApi.listTags(debouncedTagSearch),
+  });
+  const tagOptions = (tagsQuery.data || []).map((t) => ({
+    value: t.id,
+    label: t.name,
+  }));
+
+  const uploadMutation = useMutation<
+    AssetModel,
+    unknown,
+    { file: File; fileType: string; type: string }
+  >({
+    mutationFn: async (vars) =>
       assetsApi.upload(vars.file, {
         fileType: vars.fileType,
         type: vars.type || undefined,
-      }),
-    onSuccess: async () => {
+      }) as Promise<AssetModel>,
+    onSuccess: async (asset) => {
+      // Attach tags after upload if any selected
+      if (asset?.id && selectedTags.length) {
+        try {
+          await assetsApi.attachTags(asset.id, selectedTags);
+        } catch {
+          // best-effort; notify but continue
+          notifications.show({
+            color: 'yellow',
+            message: 'Tải lên thành công nhưng gán tag thất bại',
+          });
+        }
+      }
       notifications.show({
         title: 'Tải lên thành công',
         message: 'File đã được lưu',
@@ -49,6 +82,8 @@ export default function AssetUploadDrawer({
       await qc.invalidateQueries({ queryKey: AssetsQueryKey.lists() });
       if (onUploaded) await onUploaded();
       form.reset();
+      setSelectedTags([]);
+      setTagSearch('');
       onClose();
     },
     onError: (err: unknown) => {
@@ -91,6 +126,19 @@ export default function AssetUploadDrawer({
               { value: 'file', label: 'File' },
             ]}
             {...form.getInputProps('fileType')}
+          />
+          <MultiSelect
+            label='Tag (tuỳ chọn)'
+            data={tagOptions}
+            value={selectedTags}
+            onChange={setSelectedTags}
+            searchable
+            searchValue={tagSearch}
+            onSearchChange={setTagSearch}
+            nothingFoundMessage={
+              tagsQuery.isFetching ? 'Đang tải...' : 'Không có tag'
+            }
+            placeholder='Chọn tag để gán sau khi tải lên'
           />
           <TextInput
             label='Phân loại (type)'
