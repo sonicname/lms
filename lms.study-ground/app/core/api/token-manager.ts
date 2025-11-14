@@ -6,13 +6,13 @@ export interface TokenState {
   refreshToken?: string;
 }
 
-export interface AuthStore {
+export interface TokenStore {
   tokens: TokenState;
   setTokens: (tokens: TokenState) => void;
   clearTokens: () => void;
 }
 
-export const useAuthStore = create<AuthStore>()(
+export const useTokenStore = create<TokenStore>()(
   persist(
     (set, get) => ({
       tokens: {
@@ -42,6 +42,6 @@ export const useAuthStore = create<AuthStore>()(
   ),
 );
 
-export const getAuthStore = useAuthStore.getState;
-export const getAccessToken = () => getAuthStore().tokens.accessToken;
-export const getRefreshToken = () => getAuthStore().tokens.refreshToken;
+export const getTokenStore = useTokenStore.getState;
+export const getAccessToken = () => getTokenStore().tokens.accessToken;
+export const getRefreshToken = () => getTokenStore().tokens.refreshToken;

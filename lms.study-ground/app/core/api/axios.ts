@@ -7,8 +7,8 @@ import axios, {
 } from 'axios';
 import {
   getAccessToken,
-  getAuthStore,
   getRefreshToken,
+  getTokenStore,
 } from '~/core/api/token-manager';
 
 type RetriableRequestConfig = InternalAxiosRequestConfig & {
@@ -66,7 +66,7 @@ class Api {
 
         // handle 403 forbidden due to role restrictions
         if (status === 403) {
-          getAuthStore().clearTokens();
+          getTokenStore().clearTokens();
 
           return Promise.reject(error);
         }
@@ -179,7 +179,7 @@ class Api {
         const newRefresh: string | undefined = res?.data?.tokens?.refreshToken;
 
         // Mirror token in localStorage if available for Authorization header usage
-        getAuthStore().setTokens({
+        getTokenStore().setTokens({
           accessToken: token,
           refreshToken: newRefresh,
         });
@@ -189,7 +189,7 @@ class Api {
       })
       .catch((err) => {
         // Clear any mirrored token on failure
-        getAuthStore().clearTokens();
+        getTokenStore().clearTokens();
         // Also notify waiting subscribers so they can fail-fast
         this.notifyRefreshed(undefined);
         throw err;

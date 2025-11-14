@@ -14,11 +14,11 @@ import { notifications } from '@mantine/notifications';
 import React from 'react';
 import { useNavigate } from 'react-router';
 import { signIn } from '~/core/api/client';
-import { useAuthStore } from '~/core/api/token-manager';
+import { useTokenStore } from '~/core/api/token-manager';
 
 export default function SignInPage() {
   const navigate = useNavigate();
-  const setTokens = useAuthStore((s) => s.setTokens);
+  const setTokens = useTokenStore((s) => s.setTokens);
 
   const form = useForm({
     initialValues: {
