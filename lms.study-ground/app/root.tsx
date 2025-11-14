@@ -1,3 +1,4 @@
+import { Notifications } from '@mantine/notifications';
 import {
   isRouteErrorResponse,
   Links,
@@ -8,6 +9,18 @@ import {
   type LinksFunction,
 } from 'react-router';
 
+import {
+  ColorSchemeScript,
+  mantineHtmlProps,
+  MantineProvider,
+} from '@mantine/core';
+
+import '@mantine/core/styles.css';
+
+import '@mantine/carousel/styles.css';
+import '@mantine/dates/styles.css';
+import '@mantine/notifications/styles.css';
+import '@mantine/nprogress/styles.css';
 import './app.css';
 
 export const links: LinksFunction = () => [
@@ -25,15 +38,19 @@ export const links: LinksFunction = () => [
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang='en'>
+    <html lang='en' {...mantineHtmlProps}>
       <head>
         <meta charSet='utf-8' />
         <meta name='viewport' content='width=device-width, initial-scale=1' />
         <Meta />
         <Links />
+        <ColorSchemeScript />
       </head>
       <body>
-        {children}
+        <MantineProvider>
+          {children}
+          <Notifications />
+        </MantineProvider>
         <ScrollRestoration />
         <Scripts />
       </body>
