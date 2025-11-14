@@ -44,5 +44,4 @@ export const useAuthStore = create<AuthStore>()(
 );
 
 export const getAuthStore = useAuthStore.getState;
-export const authStore = useAuthStore();
 export const currentUser = () => getAuthStore().user;

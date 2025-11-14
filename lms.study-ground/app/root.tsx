@@ -21,6 +21,7 @@ import '@mantine/carousel/styles.css';
 import '@mantine/dates/styles.css';
 import '@mantine/notifications/styles.css';
 import '@mantine/nprogress/styles.css';
+import ReactQueryProvider from '~/core/providers/react-query-provider';
 import './app.css';
 
 export const links: LinksFunction = () => [
@@ -47,10 +48,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <ColorSchemeScript />
       </head>
       <body>
-        <MantineProvider>
-          {children}
-          <Notifications />
-        </MantineProvider>
+        <ReactQueryProvider>
+          <MantineProvider>
+            {children}
+            <Notifications />
+          </MantineProvider>
+        </ReactQueryProvider>
         <ScrollRestoration />
         <Scripts />
       </body>

@@ -10,15 +10,12 @@ import {
   Title,
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
-import { notifications } from '@mantine/notifications';
-import React from 'react';
+import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router';
-import { signIn } from '~/core/api/client';
-import { useTokenStore } from '~/core/api/token-manager';
+import { signIn } from '~/modules/auth/services/auth.api';
 
 export default function SignInPage() {
   const navigate = useNavigate();
-  const setTokens = useTokenStore((s) => s.setTokens);
 
   const form = useForm({
     initialValues: {
@@ -34,40 +31,21 @@ export default function SignInPage() {
     },
   });
 
-  const [submitting, setSubmitting] = React.useState(false);
-
-  const onSubmit = form.onSubmit(async (values) => {
-    setSubmitting(true);
-    try {
-      const res = await signIn({
-        email: values.email,
-        password: values.password,
-        rememberMe: values.rememberMe,
-      });
-
-      setTokens({
-        accessToken: res.tokens.accessToken,
-        refreshToken: res.tokens.refreshToken,
-      });
-
-      notifications.show({
-        color: 'green',
-        title: 'Signed in',
-        message: 'Welcome back!',
-      });
-
-      navigate('/');
-    } catch (err: any) {
-      const msg = err?.response?.data?.message || 'Invalid email or password';
-      notifications.show({
-        color: 'red',
-        title: 'Sign-in failed',
-        message: msg,
-      });
-    } finally {
-      setSubmitting(false);
-    }
+  const mutation = useMutation({
+    mutationFn: async (values: typeof form.values) =>
+      signIn(
+        {
+          email: values.email,
+          password: values.password,
+          rememberMe: values.rememberMe,
+        },
+        () => {
+          navigate('/');
+        },
+      ),
   });
+
+  const onSubmit = form.onSubmit((values) => mutation.mutate(values));
 
   return (
     <Paper maw={420} mx='auto' mt='xl' p='lg' withBorder>
@@ -106,7 +84,7 @@ export default function SignInPage() {
             />
 
             <Group justify='flex-end'>
-              <Button type='submit' loading={submitting}>
+              <Button type='submit' loading={mutation.isPending}>
                 Sign In
               </Button>
             </Group>

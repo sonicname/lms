@@ -35,7 +35,10 @@ export type SignInDto = {
   callbackURL?: string;
 };
 
-export async function signIn(payload: SignInDto): Promise<AuthResponse> {
+export async function signIn(
+  payload: SignInDto,
+  successCallback?: () => void,
+): Promise<AuthResponse> {
   const signInResponse = await axios.post<
     any,
     AxiosResponse<AuthResponse>,
@@ -68,6 +71,8 @@ export async function signIn(payload: SignInDto): Promise<AuthResponse> {
       name: data.user.name || '',
       role: data.user.role as 'admin' | 'teacher' | 'student',
     });
+
+    successCallback?.();
   }
 
   return data;
