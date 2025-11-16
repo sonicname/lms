@@ -21,6 +21,7 @@ import {
   Tooltip,
 } from '@mantine/core';
 import { useQueries } from '@tanstack/react-query';
+import appEnv from 'app-env';
 import { LuGripVertical, LuX } from 'react-icons/lu';
 import { assetsApi } from '../../assets/services/assets.api';
 
@@ -86,7 +87,7 @@ export default function SelectedBannersSortable({
                 <Group gap='sm' wrap='nowrap'>
                   {it.data?.url ? (
                     <Image
-                      src={it.data.url}
+                      src={`${appEnv.apiUrl}${it.data.url}`}
                       alt={it.data.filename || it.id}
                       w={64}
                       h={40}

@@ -14,6 +14,7 @@ import {
 import { useDebouncedValue, useDisclosure } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import appEnv from 'app-env';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { LuEye, LuPencil, LuTrash2 } from 'react-icons/lu';
 import { useNavigate } from 'react-router-dom';
@@ -104,7 +105,7 @@ export default function ClassesManagerPage() {
             <Group align='flex-start' gap='sm' wrap='nowrap'>
               {c.banners && c.banners.length ? (
                 <Image
-                  src={c.banners[0].url}
+                  src={`${appEnv.apiUrl}${c.banners[0].url}`}
                   alt={c.banners[0].filename || 'banner'}
                   radius='sm'
                   w={64}

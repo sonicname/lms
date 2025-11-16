@@ -1,6 +1,7 @@
 import { Carousel } from '@mantine/carousel';
 import { Badge, Button, Card, Group, Image, Stack, Text } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
+import appEnv from 'app-env';
 import { useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { ClassesQueryKey } from '../../../../classes/constants/classes-query-key';
@@ -22,7 +23,7 @@ export default function ClassDetailRootPage() {
             {data.banners.map((b) => (
               <Carousel.Slide key={b.id}>
                 <Image
-                  src={b.url}
+                  src={`${appEnv.apiUrl}${b.url}`}
                   alt={b.filename || b.id}
                   radius='md'
                   h={220}
