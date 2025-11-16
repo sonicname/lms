@@ -426,6 +426,13 @@ export class ClassesService {
           teacherId: true,
           createdAt: true,
           updatedAt: true,
+          teacher: {
+            select: {
+              image: true,
+              name: true,
+              email: true,
+            },
+          },
         },
       }),
       this.prisma.class.count({ where }),

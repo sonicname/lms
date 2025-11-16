@@ -8,6 +8,10 @@ export default function Homepage() {
     return <Navigate to='/auth/sign-in' />;
   }
 
+  if (isLoggedIn()) {
+    return <Navigate to='/school-schedule' />;
+  }
+
   return (
     <div>
       <h1>Welcome to the Study Ground!</h1>

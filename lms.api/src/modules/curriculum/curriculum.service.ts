@@ -268,10 +268,7 @@ export class CurriculumService {
   ) {
     await this.ensureActorCanReadClass(actorId, actorRole, classId);
     const baseWhere: any = { chapterId };
-    if (actorRole === Role.Student) {
-      const now = new Date();
-      baseWhere.OR = [{ scheduleDate: null }, { scheduleDate: { lte: now } }];
-    }
+
     return this.prisma.lesson.findMany({
       where: baseWhere,
       orderBy: [{ displayOrder: 'asc' }, { createdAt: 'asc' }],

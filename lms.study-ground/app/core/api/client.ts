@@ -1,9 +1,9 @@
+import appEnv from 'app-env';
 import Api from './axios';
 
 // Central API instance. Uses env var if provided, else localhost fallback.
 // Back-end Nest app likely runs on 3001 (adjust if different).
-const baseURL =
-  (import.meta as any).env?.VITE_API_BASE_URL || 'http://localhost:3001';
+const baseURL = appEnv.apiUrl || 'http://localhost:3001';
 
 export const api = new Api({ baseURL });
 
