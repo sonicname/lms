@@ -90,16 +90,13 @@ export class ClassesService {
     const tagConnect = await this.prepareClassTags(teacherId, dto.tags);
 
     try {
-      return await this.prisma.class.create({
+      const created = await this.prisma.class.create({
         data: {
           name: dto.name,
           description: dto.description ?? null,
           code: dto.code,
           teacherId,
           ...(tagConnect ? { tags: { connect: tagConnect } } : {}),
-          ...(Array.isArray(dto.banners) && dto.banners.length
-            ? { banners: { connect: dto.banners.map((id) => ({ id })) } }
-            : {}),
         },
         select: {
           id: true,
@@ -111,6 +108,21 @@ export class ClassesService {
           updatedAt: true,
         },
       });
+
+      // Attach banners with order if provided
+      if (Array.isArray(dto.banners) && dto.banners.length) {
+        // Ensure all previous banners (should be none) are cleared and then set order
+        await this.prisma.$transaction([
+          ...dto.banners.map((assetId, idx) =>
+            this.prisma.assets.update({
+              where: { id: assetId },
+              data: { bannerClassId: created.id, bannerOrder: idx + 1 },
+            }),
+          ),
+        ]);
+      }
+
+      return created;
     } catch (e: any) {
       if (e?.code === 'P2002')
         throw new ConflictException('Class code already exists');
@@ -148,7 +160,8 @@ export class ClassesService {
     );
 
     try {
-      return await this.prisma.class.update({
+      // Update basic info and tags first
+      const updated = await this.prisma.class.update({
         where: { id },
         data: {
           name: dto.name ?? undefined,
@@ -156,9 +169,6 @@ export class ClassesService {
           code: dto.code ?? undefined,
           teacherId,
           ...(tagsSet ? { tags: { set: tagsSet } } : {}),
-          ...(dto.banners !== undefined
-            ? { banners: { set: (dto.banners || []).map((id) => ({ id })) } }
-            : {}),
         },
         select: {
           id: true,
@@ -170,6 +180,28 @@ export class ClassesService {
           updatedAt: true,
         },
       });
+
+      // Handle banners replacement and ordering if provided
+      if (dto.banners !== undefined) {
+        const nextIds = dto.banners || [];
+        await this.prisma.$transaction(async (tx) => {
+          // Clear existing banner relations for this class
+          await tx.assets.updateMany({
+            where: { bannerClassId: id },
+            data: { bannerClassId: null, bannerOrder: null },
+          });
+          // Attach new ones with order
+          for (let i = 0; i < nextIds.length; i++) {
+            const assetId = nextIds[i];
+            await tx.assets.update({
+              where: { id: assetId },
+              data: { bannerClassId: id, bannerOrder: i + 1 },
+            });
+          }
+        });
+      }
+
+      return updated;
     } catch (e: any) {
       if (e?.code === 'P2002')
         throw new ConflictException('Class code already exists');
@@ -240,7 +272,10 @@ export class ClassesService {
           },
         },
         tags: { select: { id: true, name: true } },
-        banners: { select: { id: true, url: true, filename: true } },
+        banners: {
+          orderBy: [{ bannerOrder: 'asc' }, { createdAt: 'asc' }],
+          select: { id: true, url: true, filename: true },
+        },
       },
     });
     if (!cls) throw new NotFoundException('Class not found');
@@ -279,7 +314,7 @@ export class ClassesService {
           updatedAt: true,
           banners: {
             take: 1,
-            orderBy: { createdAt: 'desc' },
+            orderBy: [{ bannerOrder: 'asc' }, { createdAt: 'asc' }],
             select: { id: true, url: true, filename: true },
           },
         },

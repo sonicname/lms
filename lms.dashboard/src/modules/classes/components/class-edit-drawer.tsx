@@ -18,6 +18,7 @@ import { AssetsQueryKey } from '../../assets/constants/assets-query-key';
 import { ClassesQueryKey } from '../constants/classes-query-key';
 import type { UpdateClassModel } from '../models/update-class.model';
 import { classesApi } from '../services/classes.api';
+import SelectedBannersSortable from './selected-banners-sortable';
 
 export type ClassEditDrawerProps = {
   opened: boolean;
@@ -139,6 +140,15 @@ export default function ClassEditDrawer({
               listEmptyLabel='Không có ảnh'
               extraFilters={{ fileType: 'image' }}
             />
+            <Stack gap={4}>
+              <Text size='sm' c='dimmed'>
+                Thứ tự hiển thị
+              </Text>
+              <SelectedBannersSortable
+                value={form.values.banners ?? []}
+                onChange={(ids) => form.setFieldValue('banners', ids)}
+              />
+            </Stack>
           </Stack>
           <Group justify='flex-end'>
             <Button variant='default' onClick={onClose} type='button'>

@@ -1,3 +1,4 @@
+import { Carousel } from '@mantine/carousel';
 import { Badge, Button, Card, Group, Image, Stack, Text } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
@@ -17,12 +18,36 @@ export default function ClassDetailRootPage() {
     <Card withBorder>
       <Stack gap='xs'>
         {Array.isArray(data.banners) && data.banners.length ? (
-          <Group gap='xs'>
+          <Carousel withIndicators height={220} slideSize='60%' slideGap='sm'>
             {data.banners.map((b) => (
-              <Image key={b.id} src={b.url} alt={b.filename || b.id} radius='sm' h={80} w='auto' fit='contain' />
+              <Carousel.Slide key={b.id}>
+                <Image
+                  src={b.url}
+                  alt={b.filename || b.id}
+                  radius='md'
+                  h={220}
+                  w='100%'
+                  fit='cover'
+                />
+              </Carousel.Slide>
             ))}
-          </Group>
-        ) : null}
+          </Carousel>
+        ) : (
+          <div
+            style={{
+              width: '100%',
+              height: 180,
+              borderRadius: 12,
+              background: '#f1f3f5',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              border: '1px dashed #dee2e6',
+            }}
+          >
+            <Text c='dimmed'>Chưa có banner</Text>
+          </div>
+        )}
         <Text fw={600}>{data.name}</Text>
         <Group gap='sm'>
           <Badge color='blue' variant='light'>

@@ -110,8 +110,25 @@ export default function ClassesManagerPage() {
                   w={64}
                   h={40}
                   fit='cover'
-                />)
-              : null}
+                />
+              ) : (
+                <div
+                  style={{
+                    width: 64,
+                    height: 40,
+                    borderRadius: 8,
+                    background: '#f1f3f5',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    border: '1px dashed #dee2e6',
+                  }}
+                >
+                  <Text fz='xs' c='dimmed'>
+                    Không ảnh
+                  </Text>
+                </div>
+              )}
               <div>
                 <Text fw={500} fz='sm'>
                   {c.name}
