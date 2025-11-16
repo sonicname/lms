@@ -1,4 +1,10 @@
-import { IsNotEmpty, IsOptional, IsString, Length } from 'class-validator';
+import {
+  IsArray,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  Length,
+} from 'class-validator';
 
 export class CreateClassDto {
   @IsString()
@@ -18,4 +24,10 @@ export class CreateClassDto {
   @IsString()
   @IsOptional()
   teacherId?: string;
+
+  // Optional tag names to associate with the class (owned by the teacher)
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  tags?: string[];
 }

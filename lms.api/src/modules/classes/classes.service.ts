@@ -9,6 +9,7 @@ import { Role } from 'src/modules/auth/constants/roles.enum';
 import { CreateClassDto } from './dtos/create-class.dto';
 import { ListAvailableStudentsDto } from './dtos/list-available-students.dto';
 import { ListClassStudentsDto } from './dtos/list-class-students.dto';
+import { ListClassTagsDto } from './dtos/list-class-tags.dto';
 import { ListClassesDto } from './dtos/list-classes.dto';
 import { UpdateClassDto } from './dtos/update-class.dto';
 
@@ -24,6 +25,47 @@ export class ClassesService {
     if (!user) throw new NotFoundException('User not found');
     if (user.role !== Role.Teacher)
       throw new ForbiddenException('Only teachers allowed');
+  }
+
+  /**
+   * Ensures class tags exist for the given teacher user and returns a list of { id } to connect/set.
+   */
+  private async prepareClassTags(
+    ownerUserId: string,
+    names?: string[],
+  ): Promise<{ id: string }[] | null> {
+    if (!names || !Array.isArray(names)) return null;
+    const unique = Array.from(
+      new Set(
+        names
+          .map((n) => (typeof n === 'string' ? n.trim() : ''))
+          .filter((n) => n.length > 0),
+      ),
+    );
+    if (unique.length === 0) return [];
+    const ids: { id: string }[] = [];
+    for (const name of unique) {
+      let tag = await this.prisma.classTags.findFirst({
+        where: { userId: ownerUserId, name },
+        select: { id: true },
+      });
+      if (!tag) {
+        try {
+          tag = await this.prisma.classTags.create({
+            data: { name, userId: ownerUserId },
+            select: { id: true },
+          });
+        } catch (e: any) {
+          // In case of race creating the same tag, read it again
+          tag = await this.prisma.classTags.findFirst({
+            where: { userId: ownerUserId, name },
+            select: { id: true },
+          });
+        }
+      }
+      if (tag) ids.push({ id: tag.id });
+    }
+    return ids;
   }
 
   async createClass(actorId: string, actorRole: Role, dto: CreateClassDto) {
@@ -44,6 +86,9 @@ export class ClassesService {
     if (teacher.role !== Role.Teacher)
       throw new ForbiddenException('Assigned user is not a teacher');
 
+    // Prepare tags if provided: create (if needed) under teacher and connect
+    const tagConnect = await this.prepareClassTags(teacherId, dto.tags);
+
     try {
       return await this.prisma.class.create({
         data: {
@@ -51,6 +96,7 @@ export class ClassesService {
           description: dto.description ?? null,
           code: dto.code,
           teacherId,
+          ...(tagConnect ? { tags: { connect: tagConnect } } : {}),
         },
         select: {
           id: true,
@@ -92,6 +138,12 @@ export class ClassesService {
       teacherId = dto.teacherId;
     }
 
+    // If tags provided, ensure they exist for the owning teacher (after potential reassignment)
+    const tagsSet = await this.prepareClassTags(
+      teacherId ?? cls.teacherId,
+      dto.tags,
+    );
+
     try {
       return await this.prisma.class.update({
         where: { id },
@@ -100,6 +152,7 @@ export class ClassesService {
           description: dto.description ?? undefined,
           code: dto.code ?? undefined,
           teacherId,
+          ...(tagsSet ? { tags: { set: tagsSet } } : {}),
         },
         select: {
           id: true,
@@ -180,6 +233,7 @@ export class ClassesService {
             student: { select: { id: true, name: true, email: true } },
           },
         },
+        tags: { select: { id: true, name: true } },
       },
     });
     if (!cls) throw new NotFoundException('Class not found');
@@ -479,6 +533,41 @@ export class ClassesService {
         select: { id: true, name: true, email: true, image: true },
       }),
       this.prisma.user.count({ where }),
+    ]);
+
+    return {
+      data,
+      meta: { page, limit, total, totalPages: Math.ceil(total / limit) || 1 },
+    };
+  }
+
+  async listClassTags(
+    actorId: string,
+    actorRole: Role,
+    query: ListClassTagsDto,
+  ) {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 10;
+    const skip = (page - 1) * limit;
+
+    const where: any = {};
+    if (actorRole !== Role.Admin) {
+      // Teachers: only their own tags
+      where.userId = actorId;
+    }
+    if (query.search) {
+      where.name = { contains: query.search, mode: 'insensitive' };
+    }
+
+    const [data, total] = await this.prisma.$transaction([
+      this.prisma.classTags.findMany({
+        where,
+        orderBy: { name: 'asc' },
+        skip,
+        take: limit,
+        select: { id: true, name: true, createdAt: true, updatedAt: true },
+      }),
+      this.prisma.classTags.count({ where }),
     ]);
 
     return {

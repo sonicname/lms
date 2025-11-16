@@ -3,4 +3,5 @@ export type UpdateClassModel = Partial<{
   description: string | null;
   code: string;
   teacherId: string; // only admin can set
+  tags: string[];
 }>;

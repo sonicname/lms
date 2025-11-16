@@ -16,4 +16,5 @@ export type ClassDetailModel = ClassModel & {
     approvedAt: string | null;
     student: { id: string; name: string | null; email: string };
   }>;
+  tags?: Array<{ id: string; name: string }>;
 };

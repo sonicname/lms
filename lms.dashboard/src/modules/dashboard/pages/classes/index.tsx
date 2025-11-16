@@ -74,11 +74,9 @@ export default function ClassesManagerPage() {
   const updateMutation = useMutation({
     mutationFn: async (vars: {
       id: string;
-      values: Partial<{
-        name: string;
-        code: string;
-        description: string | null;
-      }>;
+      values: Partial<
+        import('../../../classes/models/update-class.model').UpdateClassModel
+      >;
     }) => classesApi.update(vars.id, vars.values),
     onSuccess: async () => {
       notifications.show({
@@ -204,7 +202,7 @@ export default function ClassesManagerPage() {
         onClose={closeCreate}
         title='Tạo lớp mới'
         position='right'
-        size='md'
+        size='lg'
       >
         <ClassCreateForm
           onCreated={async () => {

@@ -5,4 +5,6 @@ export const ClassesQueryKey = {
   detail: (id: string) => [...ClassesQueryKey.all, 'detail', id] as const,
   students: (id: string, filter: unknown) =>
     [...ClassesQueryKey.detail(id), 'students', { filter }] as const,
+  tags: (filter: unknown) =>
+    [...ClassesQueryKey.all, 'tags', { filter }] as const,
 };

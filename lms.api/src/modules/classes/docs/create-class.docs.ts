@@ -12,6 +12,12 @@ export const CreateClassDocs = () =>
           description: { type: 'string', nullable: true },
           code: { type: 'string', minLength: 3, maxLength: 32 },
           teacherId: { type: 'string', description: 'Admin only' },
+          tags: {
+            type: 'array',
+            items: { type: 'string' },
+            description:
+              'Optional list of tag names to associate with the class (owned by the teacher)',
+          },
         },
         required: ['name', 'code'],
       },

@@ -27,6 +27,7 @@ import { GetClassDocs } from './docs/get-class.docs';
 import { JoinClassDocs } from './docs/join-class.docs';
 import { KickStudentDocs } from './docs/kick-student.docs';
 import { ListAvailableStudentsDocs } from './docs/list-available-students.docs';
+import { ListClassTagsDocs } from './docs/list-class-tags.docs';
 import { ListClassesDocs } from './docs/list-classes.docs';
 import { ListMyClassesDocs } from './docs/list-my-classes.docs';
 import { ListStudentsDocs } from './docs/list-students.docs';
@@ -36,6 +37,7 @@ import { AddStudentDto } from './dtos/add-student.dto';
 import { CreateClassDto } from './dtos/create-class.dto';
 import { ListAvailableStudentsDto } from './dtos/list-available-students.dto';
 import { ListClassStudentsDto } from './dtos/list-class-students.dto';
+import { ListClassTagsDto } from './dtos/list-class-tags.dto';
 import { ListClassesDto } from './dtos/list-classes.dto';
 import { UpdateClassDto } from './dtos/update-class.dto';
 
@@ -84,6 +86,20 @@ export class ClassesController {
     @Query() query: ListClassesDto,
   ) {
     return this.classesService.listMyApprovedClasses(req.user!.id, query);
+  }
+
+  // Teacher: list own class tags (with pagination)
+  @Get('tags')
+  @UseGuards(RolesGuard)
+  @Roles(Role.Admin, Role.Teacher)
+  @ListClassTagsDocs()
+  async listTags(
+    @Req() req: Request & { user?: { id: string } },
+    @Query() query: ListClassTagsDto,
+  ) {
+    const actorId = req.user!.id;
+    const actorRole = (await this.getRoleFromRequest(req)) as Role;
+    return this.classesService.listClassTags(actorId, actorRole, query);
   }
 
   // Get class detail

@@ -1,4 +1,4 @@
-import { IsOptional, IsString, Length } from 'class-validator';
+import { IsArray, IsOptional, IsString, Length } from 'class-validator';
 
 export class UpdateClassDto {
   @IsString()
@@ -18,4 +18,10 @@ export class UpdateClassDto {
   @IsString()
   @IsOptional()
   teacherId?: string;
+
+  // Replace tags with the provided list (owned by the class teacher)
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  tags?: string[];
 }

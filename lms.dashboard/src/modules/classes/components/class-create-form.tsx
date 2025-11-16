@@ -1,4 +1,12 @@
-import { Autocomplete, Button, Group, Stack, TextInput } from '@mantine/core';
+import {
+  Autocomplete,
+  Button,
+  Group,
+  Stack,
+  TagsInput,
+  Textarea,
+  TextInput,
+} from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useDebouncedValue } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
@@ -10,6 +18,7 @@ import { accountApi } from '../../accounts/services/account.api';
 import { useAuthStore } from '../../auth/stores/auth-store';
 import { ClassesQueryKey } from '../constants/classes-query-key';
 import type { CreateClassModel } from '../models/create-class.model';
+import type { TagModel } from '../models/tag.model';
 import { classesApi } from '../services/classes.api';
 
 export type ClassCreateFormProps = {
@@ -26,9 +35,13 @@ export default function ClassCreateForm({ onCreated }: ClassCreateFormProps) {
   const form = useForm<CreateClassModel>({
     initialValues: {
       name: '',
-      code: '',
+      code: `${currentUserId}-${Math.random()
+        .toString(36)
+        .substring(2, 8)
+        .toUpperCase()}`,
       description: '',
       teacherId: undefined,
+      tags: [],
     },
     validate: {
       name: (v) =>
@@ -36,7 +49,7 @@ export default function ClassCreateForm({ onCreated }: ClassCreateFormProps) {
       code: (v) =>
         !v ? 'Mã lớp bắt buộc' : v.length > 20 ? 'Tối đa 20 ký tự' : null,
       description: (v) =>
-        v && v.length > 500 ? 'Mô tả tối đa 500 ký tự' : null,
+        v && v.length > 2000 ? 'Mô tả tối đa 2000 ký tự' : null,
     },
   });
 
@@ -64,6 +77,19 @@ export default function ClassCreateForm({ onCreated }: ClassCreateFormProps) {
     id: u.id,
   }));
 
+  // Tags suggestions (fetch top tags, allow free typing)
+  const [localTagOptions, setLocalTagOptions] = useState<string[]>([]);
+  const tagsQuery = useQuery({
+    queryKey: ClassesQueryKey.tags({ search: '' }),
+    queryFn: async () => classesApi.listTags({ limit: 20 }),
+  });
+  const tagOptions = ((tagsQuery.data?.data ?? []) as TagModel[]).map(
+    (t) => t.name,
+  );
+  const mergedTagOptions = Array.from(
+    new Set([...tagOptions, ...localTagOptions]),
+  );
+
   const createMutation = useMutation({
     mutationFn: async (payload: CreateClassModel) => classesApi.create(payload),
     onSuccess: async () => {
@@ -86,7 +112,7 @@ export default function ClassCreateForm({ onCreated }: ClassCreateFormProps) {
     if (currentUserRole === 'admin') return;
 
     form.setFieldValue('teacherId', currentUserId);
-  }, [currentUserRole, currentUserId]);
+  }, [currentUserRole, currentUserId, form]);
 
   return (
     <form
@@ -107,10 +133,24 @@ export default function ClassCreateForm({ onCreated }: ClassCreateFormProps) {
           withAsterisk
           {...form.getInputProps('code')}
         />
-        <TextInput
+        <Textarea
+          rows={10}
           label='Mô tả'
           placeholder='Nhập mô tả'
           {...form.getInputProps('description')}
+        />
+        <TagsInput
+          label='Tags'
+          placeholder='Nhập để thêm, Enter để tạo'
+          data={mergedTagOptions}
+          value={form.values.tags ?? []}
+          onChange={(vals) => form.setFieldValue('tags', vals)}
+          onOptionSubmit={(val) => {
+            // When selecting a suggestion ensure it's in local options for future sessions
+            setLocalTagOptions((prev) =>
+              prev.includes(val) ? prev : [...prev, val],
+            );
+          }}
         />
         {currentUserRole === 'admin' ? (
           <Autocomplete

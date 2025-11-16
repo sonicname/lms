@@ -6,6 +6,7 @@ import type {
   ListClassFilterModel,
   ListClassModel,
 } from '../models/list-class.model';
+import type { ListTagModel } from '../models/tag.model';
 import type { UpdateClassModel } from '../models/update-class.model';
 
 const basePrefix = '/classes';
@@ -42,4 +43,6 @@ export const classesApi = {
     classId: string,
     params?: { page?: number; limit?: number; search?: string },
   ) => api.get<any>(`${basePrefix}/${classId}/available-students`, { params }),
+  listTags: (params?: { page?: number; limit?: number; search?: string }) =>
+    api.get<ListTagModel>(`${basePrefix}/tags`, { params }),
 };

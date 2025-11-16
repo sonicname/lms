@@ -34,6 +34,8 @@ model User {
   quizzes          Quiz[]
   assetsTags       AssetsTag[]
 
+  classTags ClassTags[]
+
   profile Profile?
 
   createdAt DateTime @default(now())
@@ -143,6 +145,21 @@ model EssayQuestion {
   @@index([testId])
 }
 
+model ClassTags {
+  id   String @id @default(nanoid())
+  name String
+
+  classes Class[]
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, name], name: "user_classtag_unique")
+}
+
 model Class {
   id          String  @id @default(uuid())
   name        String
@@ -152,6 +169,8 @@ model Class {
   // One teacher per class
   teacherId String
   teacher   User   @relation("TeacherClasses", fields: [teacherId], references: [id])
+
+  tags ClassTags[]
 
   // Many students via explicit join table
   students ClassStudent[]
