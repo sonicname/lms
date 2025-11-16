@@ -11,7 +11,7 @@ import {
 } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
-import { useParams } from 'react-router';
+import { useNavigate, useParams } from 'react-router';
 import {
   listMyClasses,
   type ClassModel,
@@ -26,6 +26,7 @@ import {
 export default function DetailClassIndexPage() {
   const { id: classId } = useParams();
   const [opened, setOpened] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   const chaptersQuery = useQuery({
     enabled: !!classId,
@@ -97,7 +98,14 @@ export default function DetailClassIndexPage() {
                             ? when.getTime() > Date.now()
                             : false;
                           return (
-                            <Card key={l.id} withBorder padding='sm'>
+                            <Card
+                              key={l.id}
+                              withBorder
+                              padding='sm'
+                              onClick={() => {
+                                navigate(`/school-schedule/${classId}/${l.id}`);
+                              }}
+                            >
                               <Group justify='space-between' align='center'>
                                 <div>
                                   <Text fw={600}>{l.title}</Text>

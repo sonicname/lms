@@ -64,13 +64,6 @@ class Api {
           | RetriableRequestConfig
           | undefined;
 
-        // handle 403 forbidden due to role restrictions
-        if (status === 403) {
-          getTokenStore().clearTokens();
-
-          return Promise.reject(error);
-        }
-
         // Only handle 401 once per request to avoid infinite loops
         if (status === 401 && originalRequest && !originalRequest._retry) {
           originalRequest._retry = true;
