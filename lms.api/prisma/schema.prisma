@@ -119,6 +119,9 @@ model Assets {
   essayQuestionId String?
   essayQuestion   EssayQuestion? @relation(fields: [essayQuestionId], references: [id], onDelete: SetNull)
 
+  bannerClassId String?
+  bannerClass   Class?  @relation(fields: [bannerClassId], references: [id], onDelete: SetNull)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -165,6 +168,8 @@ model Class {
   name        String
   description String?
   code        String  @unique
+
+  banners Assets[]
 
   // One teacher per class
   teacherId String

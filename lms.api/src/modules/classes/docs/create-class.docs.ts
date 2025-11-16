@@ -18,6 +18,12 @@ export const CreateClassDocs = () =>
             description:
               'Optional list of tag names to associate with the class (owned by the teacher)',
           },
+          banners: {
+            type: 'array',
+            items: { type: 'string' },
+            description:
+              'Optional list of asset IDs to set as class banners (images)',
+          },
         },
         required: ['name', 'code'],
       },

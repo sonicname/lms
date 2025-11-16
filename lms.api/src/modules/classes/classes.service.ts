@@ -97,6 +97,9 @@ export class ClassesService {
           code: dto.code,
           teacherId,
           ...(tagConnect ? { tags: { connect: tagConnect } } : {}),
+          ...(Array.isArray(dto.banners) && dto.banners.length
+            ? { banners: { connect: dto.banners.map((id) => ({ id })) } }
+            : {}),
         },
         select: {
           id: true,
@@ -153,6 +156,9 @@ export class ClassesService {
           code: dto.code ?? undefined,
           teacherId,
           ...(tagsSet ? { tags: { set: tagsSet } } : {}),
+          ...(dto.banners !== undefined
+            ? { banners: { set: (dto.banners || []).map((id) => ({ id })) } }
+            : {}),
         },
         select: {
           id: true,
@@ -234,6 +240,7 @@ export class ClassesService {
           },
         },
         tags: { select: { id: true, name: true } },
+        banners: { select: { id: true, url: true, filename: true } },
       },
     });
     if (!cls) throw new NotFoundException('Class not found');
@@ -270,6 +277,11 @@ export class ClassesService {
           teacherId: true,
           createdAt: true,
           updatedAt: true,
+          banners: {
+            take: 1,
+            orderBy: { createdAt: 'desc' },
+            select: { id: true, url: true, filename: true },
+          },
         },
       }),
       this.prisma.class.count({ where }),

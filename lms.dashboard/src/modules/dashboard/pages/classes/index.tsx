@@ -4,6 +4,7 @@ import {
   Drawer,
   Flex,
   Group,
+  Image,
   Pagination,
   Table,
   Text,
@@ -13,7 +14,7 @@ import {
 import { useDebouncedValue, useDisclosure } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { LuEye, LuPencil, LuTrash2 } from 'react-icons/lu';
 import { useNavigate } from 'react-router-dom';
 import SkeletonCard from '../../../../components/skeleton-card';
@@ -100,14 +101,30 @@ export default function ClassesManagerPage() {
       listData.map((c: ClassModel) => (
         <Table.Tr key={c.id}>
           <Table.Td>
-            <Text fw={500} fz='sm'>
-              {c.name}
-            </Text>
-            <Text fz='xs' c='dimmed'>
-              Mã: {c.code}
-            </Text>
+            <Group align='flex-start' gap='sm' wrap='nowrap'>
+              {c.banners && c.banners.length ? (
+                <Image
+                  src={c.banners[0].url}
+                  alt={c.banners[0].filename || 'banner'}
+                  radius='sm'
+                  w={64}
+                  h={40}
+                  fit='cover'
+                />)
+              : null}
+              <div>
+                <Text fw={500} fz='sm'>
+                  {c.name}
+                </Text>
+                <Text fz='xs' c='dimmed'>
+                  Mã: {c.code}
+                </Text>
+              </div>
+            </Group>
           </Table.Td>
-          <Table.Td>{c.description || '—'}</Table.Td>
+          <Table.Td>
+            <ClassDescriptionCell description={c.description} />
+          </Table.Td>
           <Table.Td>
             <Group gap='xs'>
               <Tooltip label='Xem chi tiết'>
@@ -246,6 +263,41 @@ export default function ClassesManagerPage() {
           selectedClassId && deleteMutation.mutate(selectedClassId)
         }
       />
+    </div>
+  );
+}
+
+function ClassDescriptionCell({ description }: { description: string | null }) {
+  const [expanded, setExpanded] = useState(false);
+  const [hasOverflow, setHasOverflow] = useState(false);
+  const spanRef = useRef<HTMLSpanElement | null>(null);
+
+  useEffect(() => {
+    if (!spanRef.current || expanded) return;
+    const el = spanRef.current;
+    // If content height (with clamp) > client height, we consider it overflow (> 2 lines)
+    if (el.scrollHeight > el.clientHeight + 1) setHasOverflow(true);
+    else setHasOverflow(false);
+  }, [description, expanded]);
+
+  if (!description) return <span>—</span>;
+  return (
+    <div>
+      <span ref={spanRef} className={expanded ? undefined : 'line-clamp-2'}>
+        {description}
+      </span>
+      {hasOverflow ? (
+        <div>
+          <Button
+            variant='subtle'
+            size='xs'
+            onClick={() => setExpanded((e) => !e)}
+            style={{ paddingLeft: 0 }}
+          >
+            {expanded ? 'Thu gọn' : 'Xem thêm'}
+          </Button>
+        </div>
+      ) : null}
     </div>
   );
 }

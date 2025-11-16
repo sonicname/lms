@@ -12,6 +12,7 @@ import { useDebouncedValue } from '@mantine/hooks';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { assetsApi } from '../../assets/services/assets.api';
+import type { ListAssetFilterModel } from '../models/asset.model';
 
 interface AssetsMultiPickerProps {
   value: string[];
@@ -21,6 +22,7 @@ interface AssetsMultiPickerProps {
   listEmptyLabel?: string;
   maxHeight?: number;
   disabled?: boolean;
+  extraFilters?: Partial<ListAssetFilterModel>;
 }
 
 // Contract:
@@ -36,6 +38,7 @@ export function AssetsMultiPicker({
   listEmptyLabel = 'Không có nội dung',
   maxHeight = 260,
   disabled = false,
+  extraFilters,
 }: AssetsMultiPickerProps) {
   const [search, setSearch] = useState('');
   const [debounced] = useDebouncedValue(search, 400);
@@ -45,9 +48,10 @@ export function AssetsMultiPicker({
     queryKey: [
       'assets',
       'picker',
-      { classId: classId || 'none', search: debounced },
+      { classId: classId || 'none', search: debounced, ...extraFilters },
     ],
-    queryFn: async () => assetsApi.list({ search: debounced, page: 1 }),
+    queryFn: async () =>
+      assetsApi.list({ search: debounced, page: 1, ...extraFilters }),
     staleTime: 10_000,
   });
 

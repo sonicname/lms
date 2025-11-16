@@ -18,6 +18,12 @@ export const UpdateClassDocs = () =>
             description:
               'Optional list of tag names to replace the class tags (owned by the teacher)',
           },
+          banners: {
+            type: 'array',
+            items: { type: 'string' },
+            description:
+              'Optional list of asset IDs to replace class banners (images)',
+          },
         },
         required: [],
       },

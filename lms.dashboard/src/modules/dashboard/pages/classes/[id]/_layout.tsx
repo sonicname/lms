@@ -49,9 +49,6 @@ export default function ClassDetailLayout() {
       <Group justify='space-between' align='flex-start'>
         <div>
           <Title order={3}>{data?.name ?? '...'}</Title>
-          <Text c='dimmed' size='sm'>
-            {data?.description || 'Không có mô tả'}
-          </Text>
           {data?.teacher && (
             <Text size='sm' mt={4}>
               Giáo viên: <b>{data.teacher.name || data.teacher.email}</b>

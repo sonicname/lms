@@ -4,17 +4,21 @@ import {
   Group,
   Stack,
   TagsInput,
+  Text,
   Textarea,
   TextInput,
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
-import { useDebouncedValue } from '@mantine/hooks';
+import { useDebouncedValue, useDisclosure } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { UsersQueryKey } from '../../accounts/constants/users-query-key';
 import type { UserModel } from '../../accounts/models/user.model';
 import { accountApi } from '../../accounts/services/account.api';
+import AssetUploadDrawer from '../../assets/components/asset-upload-drawer';
+import AssetsMultiPicker from '../../assets/components/assets-multi-picker';
+import { AssetsQueryKey } from '../../assets/constants/assets-query-key';
 import { useAuthStore } from '../../auth/stores/auth-store';
 import { ClassesQueryKey } from '../constants/classes-query-key';
 import type { CreateClassModel } from '../models/create-class.model';
@@ -35,25 +39,24 @@ export default function ClassCreateForm({ onCreated }: ClassCreateFormProps) {
   const form = useForm<CreateClassModel>({
     initialValues: {
       name: '',
-      code: `${currentUserId}-${Math.random()
-        .toString(36)
-        .substring(2, 8)
-        .toUpperCase()}`,
+      code: `${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
       description: '',
       teacherId: undefined,
       tags: [],
+      banners: [],
     },
     validate: {
       name: (v) =>
         !v ? 'Tên bắt buộc' : v.length > 100 ? 'Tối đa 100 ký tự' : null,
       code: (v) =>
-        !v ? 'Mã lớp bắt buộc' : v.length > 20 ? 'Tối đa 20 ký tự' : null,
+        !v ? 'Mã lớp bắt buộc' : v.length > 32 ? 'Tối đa 32 ký tự' : null,
       description: (v) =>
         v && v.length > 2000 ? 'Mô tả tối đa 2000 ký tự' : null,
     },
   });
 
   // Teacher autocomplete
+  const [uploadOpened, uploadCtrl] = useDisclosure(false);
   const [teacherText, setTeacherText] = useState('');
   const [debouncedTeacher] = useDebouncedValue(teacherText, 300);
 
@@ -152,6 +155,28 @@ export default function ClassCreateForm({ onCreated }: ClassCreateFormProps) {
             );
           }}
         />
+        <Stack gap='xs'>
+          <Group justify='space-between'>
+            <Text size='sm' fw={500}>
+              Banners
+            </Text>
+            <Button
+              size='xs'
+              variant='subtle'
+              onClick={uploadCtrl.open}
+              type='button'
+            >
+              Tải ảnh mới
+            </Button>
+          </Group>
+          <AssetsMultiPicker
+            value={form.values.banners ?? []}
+            onChange={(ids) => form.setFieldValue('banners', ids)}
+            searchPlaceholder='Tìm ảnh...'
+            listEmptyLabel='Không có ảnh'
+            extraFilters={{ fileType: 'image' }}
+          />
+        </Stack>
         {currentUserRole === 'admin' ? (
           <Autocomplete
             label='Giáo viên'
@@ -181,6 +206,15 @@ export default function ClassCreateForm({ onCreated }: ClassCreateFormProps) {
           </Button>
         </Group>
       </Stack>
+      <AssetUploadDrawer
+        opened={uploadOpened}
+        onClose={uploadCtrl.close}
+        onUploaded={async () => {
+          // refresh asset picker lists
+          await qc.invalidateQueries({ queryKey: ['assets', 'picker'] });
+          await qc.invalidateQueries({ queryKey: AssetsQueryKey.lists() });
+        }}
+      />
     </form>
   );
 }

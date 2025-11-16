@@ -1,5 +1,6 @@
-import { Badge, Card, Group, Stack, Text } from '@mantine/core';
+import { Badge, Button, Card, Group, Image, Stack, Text } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
+import { useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { ClassesQueryKey } from '../../../../classes/constants/classes-query-key';
 import { classesApi } from '../../../../classes/services/classes.api';
@@ -15,6 +16,14 @@ export default function ClassDetailRootPage() {
   return (
     <Card withBorder>
       <Stack gap='xs'>
+        {Array.isArray(data.banners) && data.banners.length ? (
+          <Group gap='xs'>
+            {data.banners.map((b) => (
+              <Image key={b.id} src={b.url} alt={b.filename || b.id} radius='sm' h={80} w='auto' fit='contain' />
+            ))}
+          </Group>
+        ) : null}
+        <Text fw={600}>{data.name}</Text>
         <Group gap='sm'>
           <Badge color='blue' variant='light'>
             Mã lớp: {data.code}
@@ -35,7 +44,48 @@ export default function ClassDetailRootPage() {
             ).length
           }
         </Text>
+        {typeof data.description === 'string' && data.description.length > 0 ? (
+          <DescriptionBlock description={data.description} />
+        ) : null}
       </Stack>
     </Card>
+  );
+}
+
+function DescriptionBlock({ description }: { description: string }) {
+  const [expanded, setExpanded] = useState(false);
+  const [hasOverflow, setHasOverflow] = useState(false);
+  const ref = useRef<HTMLParagraphElement | null>(null);
+
+  useEffect(() => {
+    if (!ref.current || expanded) return;
+    const el = ref.current;
+    if (el.scrollHeight > el.clientHeight + 1) setHasOverflow(true);
+    else setHasOverflow(false);
+  }, [description, expanded]);
+
+  return (
+    <div>
+      <Text size='sm' c='dimmed'>
+        Mô tả
+      </Text>
+      <Text
+        ref={ref}
+        size='sm'
+        className={expanded ? undefined : 'line-clamp-2'}
+      >
+        {description}
+      </Text>
+      {hasOverflow ? (
+        <Button
+          variant='subtle'
+          size='xs'
+          onClick={() => setExpanded((e) => !e)}
+          style={{ paddingLeft: 0 }}
+        >
+          {expanded ? 'Thu gọn' : 'Xem thêm'}
+        </Button>
+      ) : null}
+    </div>
   );
 }

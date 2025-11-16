@@ -24,4 +24,10 @@ export class UpdateClassDto {
   @IsString({ each: true })
   @IsOptional()
   tags?: string[];
+
+  // Replace banners with provided asset IDs
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  banners?: string[];
 }

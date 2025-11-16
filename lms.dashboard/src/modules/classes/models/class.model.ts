@@ -6,6 +6,7 @@ export type ClassModel = {
   teacherId: string;
   createdAt: string;
   updatedAt: string;
+  banners?: Array<{ id: string; url: string; filename: string }>;
 };
 
 export type ClassDetailModel = ClassModel & {
@@ -17,4 +18,5 @@ export type ClassDetailModel = ClassModel & {
     student: { id: string; name: string | null; email: string };
   }>;
   tags?: Array<{ id: string; name: string }>;
+  banners?: Array<{ id: string; url: string; filename: string }>;
 };

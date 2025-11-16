@@ -30,4 +30,10 @@ export class CreateClassDto {
   @IsString({ each: true })
   @IsOptional()
   tags?: string[];
+
+  // Optional banner asset IDs to associate
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  banners?: string[];
 }
