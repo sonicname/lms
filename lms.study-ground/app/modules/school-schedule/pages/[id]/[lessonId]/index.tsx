@@ -24,7 +24,7 @@ import {
   type AssetModel,
 } from '~/modules/school-schedule/services/assets.api';
 import {
-  listMyClasses,
+  getMyClassDetail,
   type ClassModel,
 } from '~/modules/school-schedule/services/classes.api';
 import {
@@ -39,6 +39,13 @@ export default function LessonDetailIndexPage() {
   const navigate = useNavigate();
   const [openedChapter, setOpenedChapter] = useState<string | null>(null);
   const [zoomImage, setZoomImage] = useState<string | null>(null);
+  // Expanded state for lesson description (must be top-level hook, not inside conditional render)
+  const [descExpanded, setDescExpanded] = useState(false);
+
+  // Reset expanded description when navigating to a different lesson
+  useEffect(() => {
+    setDescExpanded(false);
+  }, [lessonId]);
 
   // Chapters
   const chaptersQuery = useQuery({
@@ -95,15 +102,21 @@ export default function LessonDetailIndexPage() {
     enabled: !!classId,
     queryKey: ['student', 'class-meta', classId],
     queryFn: async () => {
-      const page1 = await listMyClasses({ page: 1, limit: 50 });
-      return (page1.data.find((c) => c.id === classId) ||
-        null) as ClassModel | null;
+      try {
+        return (await getMyClassDetail(classId!)) as ClassModel;
+      } catch (e) {
+        return null;
+      }
     },
   });
 
   const chapters: ChapterModel[] = (chaptersQuery.data as ChapterModel[]) || [];
   const lessonsMap: Record<string, LessonModel[]> =
     (allLessonsQuery.data as Record<string, LessonModel[]>) || {};
+  const totalLessons = Object.values(lessonsMap).reduce(
+    (sum, arr) => sum + arr.length,
+    0,
+  );
 
   const renderAsset = (asset: AssetModel) => {
     const mt = asset.mimetype || '';
@@ -185,21 +198,89 @@ export default function LessonDetailIndexPage() {
           <Card withBorder>
             {current ? (
               <>
-                <Title order={4} mb='xs'>
+                {/* Hero video (first video asset) */}
+                {assetsQuery.isPending ? (
+                  <Skeleton height={320} radius='md' mb='md' />
+                ) : (
+                  (() => {
+                    const videoAsset = assetsQuery.data?.find((a) =>
+                      (a.mimetype || '').startsWith('video/'),
+                    );
+                    if (videoAsset) {
+                      return (
+                        <Card withBorder padding='xs' mb='md'>
+                          <VideoPlayer
+                            src={`${appEnv.apiUrl}${videoAsset.url}`}
+                          />
+                          <Text size='xs' mt='xs' c='dimmed'>
+                            {videoAsset.filename}
+                          </Text>
+                        </Card>
+                      );
+                    }
+                    return null;
+                  })()
+                )}
+
+                {/* Lesson title */}
+                <Title order={4} mb='sm'>
                   {current.lesson.title}
                 </Title>
-                <Text size='sm' c='dimmed' mb='md'>
-                  {current.lesson.content || 'Không có nội dung mô tả.'}
-                </Text>
 
+                {/* Description with expandable toggle (hooks lifted to top-level to avoid conditional hook order changes) */}
+                <div style={{ marginBottom: 16 }}>
+                  <Title order={6} mb={6}>
+                    Mô tả
+                  </Title>
+                  {(() => {
+                    const raw = current.lesson.content || '';
+                    const max = 450;
+                    const display =
+                      descExpanded || raw.length <= max
+                        ? raw
+                        : raw.slice(0, max) + '…';
+                    return raw ? (
+                      <Text size='sm' style={{ whiteSpace: 'pre-line' }}>
+                        {display}
+                      </Text>
+                    ) : (
+                      <Text size='sm' c='dimmed'>
+                        Không có nội dung mô tả.
+                      </Text>
+                    );
+                  })()}
+                  {current.lesson.content &&
+                    current.lesson.content.length > 450 && (
+                      <Button
+                        variant='subtle'
+                        size='xs'
+                        mt='xs'
+                        onClick={() => setDescExpanded((v) => !v)}
+                      >
+                        {descExpanded ? 'Thu gọn' : 'Xem thêm'}
+                      </Button>
+                    )}
+                </div>
+
+                {/* Other assets except first video */}
                 <div className='flex flex-col gap-4'>
                   {assetsQuery.isPending && (
-                    <Skeleton height={200} radius='md' />
+                    <Skeleton height={160} radius='md' />
                   )}
                   {!assetsQuery.isPending && assetsQuery.data?.length === 0 && (
                     <Text c='dimmed'>Không có nội dung đính kèm</Text>
                   )}
-                  {assetsQuery.data?.map(renderAsset)}
+                  {assetsQuery.data
+                    ?.filter((a) =>
+                      !(a.mimetype || '').startsWith('video/') ||
+                      a ===
+                        assetsQuery.data?.find((v) =>
+                          (v.mimetype || '').startsWith('video/'),
+                        )
+                        ? false
+                        : true,
+                    )
+                    .map(renderAsset)}
                   {assetsQuery.error && (
                     <Text color='red'>
                       {((assetsQuery.error as AxiosError).response?.data as any)
@@ -223,9 +304,32 @@ export default function LessonDetailIndexPage() {
         </Grid.Col>
         <Grid.Col span={{ base: 12, md: 4 }}>
           <Card withBorder>
-            <Title order={5} mb='md'>
-              Danh sách chương
+            <Title order={5} mb={6}>
+              Chương trình học
             </Title>
+            <Group gap={12} mb='md'>
+              <Text size='sm' c='dimmed'>
+                {chapters.length} phần
+              </Text>
+              <Text size='sm' c='dimmed'>
+                •
+              </Text>
+              <Text size='sm' c='dimmed'>
+                {totalLessons} bài học
+              </Text>
+              <Text size='sm' c='dimmed'>
+                •
+              </Text>
+              <Text size='sm' c='dimmed'>
+                — video
+              </Text>
+              <Text size='sm' c='dimmed'>
+                •
+              </Text>
+              <Text size='sm' c='dimmed'>
+                — bài đối luyện
+              </Text>
+            </Group>
             {chaptersQuery.isPending ? (
               <Skeleton height={160} />
             ) : chapters.length ? (
@@ -358,6 +462,7 @@ function AskQuestion({ classId, chapterId, lessonId }: AskQuestionProps) {
   const qc = useQueryClient();
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
+  const [opened, setOpened] = useState(false);
 
   const questionsQuery = useRQ({
     queryKey: ['student', 'questions', classId, chapterId, lessonId],
@@ -377,52 +482,70 @@ function AskQuestion({ classId, chapterId, lessonId }: AskQuestionProps) {
   });
 
   const disabled = !title.trim() || !content.trim() || mutation.isPending;
+  const count = questionsQuery.data?.length || 0;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <Title order={6}>Đặt câu hỏi</Title>
-      <TextInput
-        placeholder='Tiêu đề câu hỏi'
-        value={title}
-        onChange={(e) => setTitle(e.currentTarget.value)}
-      />
-      <Textarea
-        placeholder='Nội dung câu hỏi'
-        minRows={3}
-        value={content}
-        onChange={(e) => setContent(e.currentTarget.value)}
-      />
-      <Group justify='flex-end'>
-        <Button
-          size='xs'
-          loading={mutation.isPending}
-          disabled={disabled}
-          onClick={() => mutation.mutate()}
-        >
-          Gửi câu hỏi
-        </Button>
-      </Group>
+    <Accordion
+      value={opened ? 'qa' : null}
+      onChange={(v) => setOpened(v === 'qa')}
+      radius='md'
+      variant='contained'
+    >
+      <Accordion.Item value='qa'>
+        <Accordion.Control>
+          <Group justify='space-between' wrap='nowrap'>
+            <Text fw={700}>Hỏi đáp</Text>
+            <Text size='sm' c='dimmed'>
+              {count} câu hỏi
+            </Text>
+          </Group>
+        </Accordion.Control>
+        <Accordion.Panel>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <TextInput
+              placeholder='Tiêu đề câu hỏi'
+              value={title}
+              onChange={(e) => setTitle(e.currentTarget.value)}
+            />
+            <Textarea
+              placeholder='Nội dung câu hỏi'
+              minRows={3}
+              value={content}
+              onChange={(e) => setContent(e.currentTarget.value)}
+            />
+            <Group justify='flex-end'>
+              <Button
+                size='xs'
+                loading={mutation.isPending}
+                disabled={disabled}
+                onClick={() => mutation.mutate()}
+              >
+                Gửi câu hỏi
+              </Button>
+            </Group>
 
-      {questionsQuery.data?.length ? (
-        <div
-          style={{
-            marginTop: 8,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 8,
-          }}
-        >
-          {questionsQuery.data.map((q) => (
-            <Card key={q.id} withBorder padding='sm'>
-              <Text fw={600}>{q.title}</Text>
-              <Text size='sm' c='dimmed'>
-                {' '}
-                {q.content}{' '}
-              </Text>
-            </Card>
-          ))}
-        </div>
-      ) : null}
-    </div>
+            {questionsQuery.data?.length ? (
+              <div
+                style={{
+                  marginTop: 8,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 8,
+                }}
+              >
+                {questionsQuery.data.map((q) => (
+                  <Card key={q.id} withBorder padding='sm'>
+                    <Text fw={600}>{q.title}</Text>
+                    <Text size='sm' c='dimmed'>
+                      {q.content}
+                    </Text>
+                  </Card>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        </Accordion.Panel>
+      </Accordion.Item>
+    </Accordion>
   );
 }
