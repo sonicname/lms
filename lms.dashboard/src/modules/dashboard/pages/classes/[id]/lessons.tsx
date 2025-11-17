@@ -20,7 +20,6 @@ import {
   Card,
   Drawer,
   Group,
-  Modal,
   Table,
   Text,
   Textarea,
@@ -40,7 +39,7 @@ import {
   LuPlus,
 } from 'react-icons/lu';
 import { useParams } from 'react-router-dom';
-import AssetsMultiPicker from '../../../../assets/components/assets-multi-picker';
+import AssetSelectModal from '../../../../assets/components/asset-select-modal';
 import { useAuthStore } from '../../../../auth/stores/auth-store';
 import type {
   ChapterModel,
@@ -692,55 +691,31 @@ export default function LessonManagerPage() {
       </Drawer>
 
       {/* Attach Assets Modal */}
-      <Modal
+      <AssetSelectModal
         opened={!!attachLesson}
         onClose={() => {
           setAttachLesson(null);
           setSelectedAssets([]);
         }}
         title='Gán nội dung cho bài học'
-        size='lg'
-      >
-        <div className='flex flex-col gap-3'>
-          <AssetsMultiPicker
-            classId={classId}
-            value={selectedAssets}
-            onChange={setSelectedAssets}
-          />
-          <Group justify='flex-end'>
-            <Button
-              variant='default'
-              onClick={() => {
-                setAttachLesson(null);
-                setSelectedAssets([]);
-              }}
-            >
-              Huỷ
-            </Button>
-            <Button
-              onClick={() => {
-                if (!attachLesson) return;
-                if (!selectedAssets.length) {
-                  notifications.show({
-                    color: 'yellow',
-                    message: 'Chọn ít nhất một nội dung',
-                  });
-                  return;
-                }
-                attachAssetsMutation.mutate({
-                  chapterId: attachLesson.chapterId,
-                  lessonId: attachLesson.lessonId,
-                  assetIds: selectedAssets,
-                });
-              }}
-              loading={attachAssetsMutation.isPending}
-              disabled={attachAssetsMutation.isPending}
-            >
-              Gán
-            </Button>
-          </Group>
-        </div>
-      </Modal>
+        value={selectedAssets}
+        onChange={setSelectedAssets}
+        onSubmit={() => {
+          if (!attachLesson) return;
+          if (!selectedAssets.length) {
+            notifications.show({
+              color: 'yellow',
+              message: 'Chọn ít nhất một nội dung',
+            });
+            return;
+          }
+          attachAssetsMutation.mutate({
+            chapterId: attachLesson.chapterId,
+            lessonId: attachLesson.lessonId,
+            assetIds: selectedAssets,
+          });
+        }}
+      />
     </div>
   );
 }

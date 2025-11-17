@@ -16,7 +16,6 @@ import {
   ActionIcon,
   Badge,
   Button,
-  Checkbox,
   Drawer,
   Group,
   Modal,
@@ -47,11 +46,8 @@ import {
 } from 'react-icons/lu';
 import { useParams } from 'react-router-dom';
 import { accountApi } from '../../../../accounts/services/account.api';
-import type {
-  AssetModel,
-  ListAssetModel,
-} from '../../../../assets/models/asset.model';
-import { assetsApi } from '../../../../assets/services/assets.api';
+// asset models not directly used here; selection via AssetSelectModal
+import AssetSelectModal from '../../../../assets/components/asset-select-modal';
 // import { assetsApi } from '../../../../assets/services/assets.api';
 import { useAuthStore } from '../../../../auth/stores/auth-store';
 import { classesApi } from '../../../../classes/services/classes.api';
@@ -361,18 +357,21 @@ export default function ClassTestsPage() {
               { value: 'mcq', label: 'Trắc nghiệm' },
               { value: 'essay', label: 'Tự luận' },
             ]}
+            placeholder='Chọn loại bài kiểm tra'
           />
           <DateTimePicker
             label='Thời gian bắt đầu'
             value={startDate}
             onChange={(d) => setStartDate(d as Date | null)}
             clearable
+            placeholder='Chọn thời gian bắt đầu'
           />
           <DateTimePicker
             label='Thời gian kết thúc'
             value={endDate}
             onChange={(d) => setEndDate(d as Date | null)}
             clearable
+            placeholder='Chọn thời gian kết thúc'
           />
           <Group justify='flex-end'>
             <Button variant='default' onClick={closeCreate}>
@@ -543,8 +542,7 @@ function EssayQuestionsDrawer({
     string | null
   >(null);
   const [selectedAssetIds, setSelectedAssetIds] = useState<string[]>([]);
-  const [assetSearch, setAssetSearch] = useState('');
-  const [assetPage, setAssetPage] = useState(1);
+  console.log('🚀 ~ selectedAssetIds:', selectedAssetIds);
   const [reorderActive, setReorderActive] = useState(false);
   const sensors = useSensors(useSensor(PointerSensor));
 
@@ -573,13 +571,7 @@ function EssayQuestionsDrawer({
     if (listQuery.data) setLocalQuestions(listQuery.data as EssayQuestionRow[]);
   }, [listQuery.data]);
 
-  // Assets listing for picker
-  const assetsQuery = useQuery<ListAssetModel>({
-    enabled: !!assetModalQuestionId,
-    queryKey: ['assets', { page: assetPage, search: assetSearch }],
-    queryFn: async () =>
-      assetsApi.list({ page: assetPage, limit: 10, search: assetSearch }),
-  });
+  // Assets listing handled by AssetSelectModal
 
   const createMutation = useMutation({
     mutationFn: async () =>
@@ -921,113 +913,17 @@ function EssayQuestionsDrawer({
           </Table.Tbody>
         </Table>
 
-        <Modal
+        <AssetSelectModal
           opened={!!assetModalQuestionId}
           onClose={() => {
             setAssetModalQuestionId(null);
             setSelectedAssetIds([]);
-            setAssetSearch('');
-            setAssetPage(1);
           }}
           title='Đính kèm nội dung'
-          size='lg'
-        >
-          <Stack gap='sm'>
-            <TextInput
-              placeholder='Tìm kiếm tên file'
-              value={assetSearch}
-              onChange={(e) => {
-                setAssetSearch(e.currentTarget.value);
-                setAssetPage(1);
-              }}
-            />
-            <Stack
-              gap={4}
-              style={{
-                maxHeight: 300,
-                overflowY: 'auto',
-                border: '1px solid var(--mantine-color-gray-3)',
-                borderRadius: 4,
-                padding: 8,
-              }}
-            >
-              {assetsQuery.isLoading && (
-                <Text c='dimmed' size='sm'>
-                  Đang tải...
-                </Text>
-              )}
-              {assetsQuery.data?.data?.map((a: AssetModel) => {
-                const checked = selectedAssetIds.includes(a.id);
-                return (
-                  <Group key={a.id} gap={8} wrap='nowrap'>
-                    <Checkbox
-                      checked={checked}
-                      onChange={(e) => {
-                        setSelectedAssetIds((ids) =>
-                          e.currentTarget.checked
-                            ? [...ids, a.id]
-                            : ids.filter((x) => x !== a.id),
-                        );
-                      }}
-                      size='xs'
-                    />
-                    <Text size='xs' style={{ flex: 1 }}>
-                      {a.filename}
-                    </Text>
-                    <Badge size='xs' color='gray'>
-                      {a.fileType}
-                    </Badge>
-                  </Group>
-                );
-              })}
-              {!assetsQuery.isLoading && !assetsQuery.data?.data?.length && (
-                <Text c='dimmed' size='xs' ta='center'>
-                  Không có tài nguyên
-                </Text>
-              )}
-            </Stack>
-            <Group justify='space-between'>
-              <Group gap={4}>
-                <Button
-                  size='xs'
-                  variant='default'
-                  disabled={assetPage === 1}
-                  onClick={() => setAssetPage((p) => Math.max(1, p - 1))}
-                >
-                  Trước
-                </Button>
-                <Button
-                  size='xs'
-                  variant='default'
-                  onClick={() => setAssetPage((p) => p + 1)}
-                >
-                  Sau
-                </Button>
-              </Group>
-              <Group gap={8}>
-                <Button
-                  size='xs'
-                  variant='default'
-                  onClick={() => {
-                    setAssetModalQuestionId(null);
-                    setSelectedAssetIds([]);
-                  }}
-                >
-                  Đóng
-                </Button>
-                <Button
-                  size='xs'
-                  color='indigo'
-                  onClick={() => attachAssetsMutation.mutate()}
-                  loading={attachAssetsMutation.status === 'pending'}
-                  disabled={!selectedAssetIds.length}
-                >
-                  Gán
-                </Button>
-              </Group>
-            </Group>
-          </Stack>
-        </Modal>
+          value={selectedAssetIds}
+          onChange={setSelectedAssetIds}
+          onSubmit={() => attachAssetsMutation.mutate()}
+        />
       </Stack>
     </Drawer>
   );
