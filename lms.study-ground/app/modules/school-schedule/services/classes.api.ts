@@ -14,6 +14,11 @@ export type ClassModel = {
     name: string;
     email: string;
   };
+  banners: {
+    id: string;
+    url: string;
+    filename: string;
+  }[];
 };
 
 export type Paginated<T> = {
@@ -40,4 +45,9 @@ export async function listMyClasses(params: ListMyClassesParams) {
   const qs = query.toString();
   const url = `${appEnv.apiUrl}/classes/mine${qs ? `?${qs}` : ''}`;
   return api.get<Paginated<ClassModel>>(url);
+}
+
+export async function getMyClassDetail(id: string) {
+  const url = `${appEnv.apiUrl}/classes/mine/${id}`;
+  return api.get<ClassModel>(url);
 }

@@ -12,10 +12,7 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
-import {
-  listMyClasses,
-  type ClassModel,
-} from '~/modules/school-schedule/services/classes.api';
+import { getMyClassDetail } from '~/modules/school-schedule/services/classes.api';
 import {
   listChapters,
   listLessons,
@@ -47,15 +44,11 @@ export default function DetailClassIndexPage() {
     queryFn: () => listLessons(classId!, opened!),
   });
 
-  // fetch class meta from my classes (temporary until student get-by-id API)
+  // fetch class meta using dedicated student detail API
   const classMetaQuery = useQuery({
     enabled: !!classId,
     queryKey: ['student', 'class-meta', classId],
-    queryFn: async () => {
-      const page1 = await listMyClasses({ page: 1, limit: 50 });
-      const found = page1.data.find((c) => c.id === classId);
-      return found || (null as unknown as ClassModel | null);
-    },
+    queryFn: () => getMyClassDetail(classId!),
   });
 
   const lessonsByChapter = useMemo(() => {

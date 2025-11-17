@@ -1,4 +1,13 @@
-import { Badge, Card, Group, Skeleton, Text, Title } from '@mantine/core';
+import {
+  Badge,
+  Card,
+  Group,
+  Image,
+  Skeleton,
+  Text,
+  Title,
+} from '@mantine/core';
+import appEnv from 'app-env';
 import { useNavigate } from 'react-router';
 import type { ClassModel } from '~/modules/school-schedule/services/classes.api';
 
@@ -44,6 +53,14 @@ export function ClassesList({
           className='cursor-pointer'
           onClick={() => navigate(`/school-schedule/${c.id}`)}
         >
+          <Card.Section>
+            <Image
+              src={`${appEnv.apiUrl}${c.banners?.[0]?.url}`}
+              alt={c.banners?.[0]?.filename || c.name}
+              h={140}
+              fit='cover'
+            />
+          </Card.Section>
           <Group justify='space-between' align='start'>
             <div>
               <Title order={5}>{c.name}</Title>

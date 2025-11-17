@@ -88,6 +88,17 @@ export class ClassesController {
     return this.classesService.listMyApprovedClasses(req.user!.id, query);
   }
 
+  // Student: get detail of a class that the student is approved in
+  @Get('mine/:id')
+  @UseGuards(RolesGuard)
+  @Roles(Role.Student)
+  async myClassDetail(
+    @Req() req: Request & { user?: { id: string } },
+    @Param('id') id: string,
+  ) {
+    return this.classesService.getMyClassDetail(req.user!.id, id);
+  }
+
   // Teacher: list own class tags (with pagination)
   @Get('tags')
   @UseGuards(RolesGuard)

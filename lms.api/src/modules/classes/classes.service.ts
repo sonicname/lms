@@ -553,6 +553,44 @@ export class ClassesService {
     };
   }
 
+  async getMyClassDetail(studentId: string, classId: string) {
+    // Ensure the student is approved in this class
+    const enrollment = await this.prisma.classStudent.findUnique({
+      where: { classId_studentId: { classId, studentId } },
+      select: { status: true },
+    });
+    if (!enrollment) throw new NotFoundException('Enrollment not found');
+    if (enrollment.status !== 'approved')
+      throw new ForbiddenException('Not allowed');
+
+    const cls = await this.prisma.class.findUnique({
+      where: { id: classId },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        code: true,
+        teacherId: true,
+        createdAt: true,
+        updatedAt: true,
+        teacher: {
+          select: {
+            image: true,
+            name: true,
+            email: true,
+          },
+        },
+        tags: { select: { id: true, name: true } },
+        banners: {
+          orderBy: [{ bannerOrder: 'asc' }, { createdAt: 'asc' }],
+          select: { id: true, url: true, filename: true },
+        },
+      },
+    });
+    if (!cls) throw new NotFoundException('Class not found');
+    return cls;
+  }
+
   async listAvailableStudents(
     actorId: string,
     actorRole: Role,
