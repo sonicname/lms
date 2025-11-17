@@ -19,6 +19,7 @@ export type ClassModel = {
     url: string;
     filename: string;
   }[];
+  tags?: { id: string; name: string }[];
 };
 
 export type Paginated<T> = {

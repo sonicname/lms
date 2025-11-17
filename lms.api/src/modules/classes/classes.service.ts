@@ -97,6 +97,9 @@ export class ClassesService {
           code: dto.code,
           teacherId,
           ...(tagConnect ? { tags: { connect: tagConnect } } : {}),
+          ...(dto.banners?.length
+            ? { banners: { connect: dto.banners.map((id) => ({ id })) } }
+            : {}),
         },
         select: {
           id: true,
@@ -108,19 +111,6 @@ export class ClassesService {
           updatedAt: true,
         },
       });
-
-      // Attach banners with order if provided
-      if (Array.isArray(dto.banners) && dto.banners.length) {
-        // Ensure all previous banners (should be none) are cleared and then set order
-        await this.prisma.$transaction([
-          ...dto.banners.map((assetId, idx) =>
-            this.prisma.assets.update({
-              where: { id: assetId },
-              data: { bannerClassId: created.id, bannerOrder: idx + 1 },
-            }),
-          ),
-        ]);
-      }
 
       return created;
     } catch (e: any) {
@@ -169,6 +159,9 @@ export class ClassesService {
           code: dto.code ?? undefined,
           teacherId,
           ...(tagsSet ? { tags: { set: tagsSet } } : {}),
+          ...(dto.banners !== undefined
+            ? { banners: { set: (dto.banners || []).map((id) => ({ id })) } }
+            : {}),
         },
         select: {
           id: true,
@@ -180,26 +173,6 @@ export class ClassesService {
           updatedAt: true,
         },
       });
-
-      // Handle banners replacement and ordering if provided
-      if (dto.banners !== undefined) {
-        const nextIds = dto.banners || [];
-        await this.prisma.$transaction(async (tx) => {
-          // Clear existing banner relations for this class
-          await tx.assets.updateMany({
-            where: { bannerClassId: id },
-            data: { bannerClassId: null, bannerOrder: null },
-          });
-          // Attach new ones with order
-          for (let i = 0; i < nextIds.length; i++) {
-            const assetId = nextIds[i];
-            await tx.assets.update({
-              where: { id: assetId },
-              data: { bannerClassId: id, bannerOrder: i + 1 },
-            });
-          }
-        });
-      }
 
       return updated;
     } catch (e: any) {
@@ -273,7 +246,7 @@ export class ClassesService {
         },
         tags: { select: { id: true, name: true } },
         banners: {
-          orderBy: [{ bannerOrder: 'asc' }, { createdAt: 'asc' }],
+          orderBy: { createdAt: 'asc' },
           select: { id: true, url: true, filename: true },
         },
       },
@@ -314,7 +287,7 @@ export class ClassesService {
           updatedAt: true,
           banners: {
             take: 1,
-            orderBy: [{ bannerOrder: 'asc' }, { createdAt: 'asc' }],
+            orderBy: { createdAt: 'asc' },
             select: { id: true, url: true, filename: true },
           },
         },
@@ -535,12 +508,9 @@ export class ClassesService {
             },
           },
           banners: {
-            select: {
-              url: true,
-              id: true,
-              filename: true,
-            },
+            select: { url: true, id: true, filename: true },
             take: 1,
+            orderBy: { createdAt: 'asc' },
           },
         },
       }),
@@ -582,7 +552,7 @@ export class ClassesService {
         },
         tags: { select: { id: true, name: true } },
         banners: {
-          orderBy: [{ bannerOrder: 'asc' }, { createdAt: 'asc' }],
+          orderBy: { createdAt: 'asc' },
           select: { id: true, url: true, filename: true },
         },
       },

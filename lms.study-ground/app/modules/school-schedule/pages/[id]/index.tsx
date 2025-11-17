@@ -172,6 +172,7 @@ export default function DetailClassIndexPage() {
                       h={180}
                       radius='sm'
                       fit='cover'
+                      loading='lazy'
                     />
                   </Carousel.Slide>
                 ))}
@@ -183,6 +184,7 @@ export default function DetailClassIndexPage() {
                 radius='sm'
                 mb='md'
                 alt='banner placeholder'
+                loading='lazy'
               />
             )}
             {classMetaQuery.isPending ? (
@@ -219,6 +221,15 @@ export default function DetailClassIndexPage() {
                     </Text>
                   </div>
                 </Group>
+                {classMetaQuery.data.tags?.length ? (
+                  <Group gap='xs'>
+                    {classMetaQuery.data.tags.map((t) => (
+                      <Badge key={t.id} variant='light' color='grape' size='sm'>
+                        {t.name}
+                      </Badge>
+                    ))}
+                  </Group>
+                ) : null}
               </div>
             ) : (
               <Text c='dimmed'>Không tìm thấy thông tin lớp</Text>

@@ -1,3 +1,4 @@
+import { Carousel } from '@mantine/carousel';
 import {
   Badge,
   Card,
@@ -54,12 +55,31 @@ export function ClassesList({
           onClick={() => navigate(`/school-schedule/${c.id}`)}
         >
           <Card.Section>
-            <Image
-              src={`${appEnv.apiUrl}${c.banners?.[0]?.url}`}
-              alt={c.banners?.[0]?.filename || c.name}
-              h={140}
-              fit='cover'
-            />
+            {c.banners && c.banners.length > 1 ? (
+              <Carousel withIndicators height={140}>
+                {c.banners.map((b) => (
+                  <Carousel.Slide key={b.id}>
+                    <Image
+                      src={`${appEnv.apiUrl}${b.url}`}
+                      alt={b.filename || c.name}
+                      h={140}
+                      fit='cover'
+                    />
+                  </Carousel.Slide>
+                ))}
+              </Carousel>
+            ) : (
+              <Image
+                src={
+                  c.banners?.[0]?.url
+                    ? `${appEnv.apiUrl}${c.banners[0].url}`
+                    : 'https://picsum.photos/600/140'
+                }
+                alt={c.banners?.[0]?.filename || c.name}
+                h={140}
+                fit='cover'
+              />
+            )}
           </Card.Section>
           <Group justify='space-between' align='start'>
             <div>

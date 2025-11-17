@@ -119,10 +119,7 @@ model Assets {
   essayQuestionId String?
   essayQuestion   EssayQuestion? @relation(fields: [essayQuestionId], references: [id], onDelete: SetNull)
 
-  bannerClassId String?
-  bannerClass   Class?  @relation(fields: [bannerClassId], references: [id], onDelete: SetNull)
-  // Display order when this asset is used as a Class banner
-  bannerOrder   Int?
+  classBanners Class[] @relation("ClassBanners")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -130,7 +127,6 @@ model Assets {
   @@index([userId, lessonId, testId, submissionId, quizId, essayQuestionId])
   @@index([filename, url])
   @@index([name])
-  @@index([bannerClassId, bannerOrder])
 }
 
 // Essay question for essay-type tests.
@@ -172,7 +168,7 @@ model Class {
   description String?
   code        String  @unique
 
-  banners Assets[]
+  banners Assets[] @relation("ClassBanners")
 
   // One teacher per class
   teacherId String
