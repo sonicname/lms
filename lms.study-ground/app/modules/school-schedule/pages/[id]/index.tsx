@@ -204,7 +204,6 @@ export default function DetailClassIndexPage() {
                   onChange={(v) => setOpened((v as string) || null)}
                   chevronPosition='left'
                   variant='contained'
-                  radius='md'
                 >
                   {(chaptersQuery.data as ChapterModel[]).map((ch) => (
                     <Accordion.Item key={ch.id} value={ch.id}>

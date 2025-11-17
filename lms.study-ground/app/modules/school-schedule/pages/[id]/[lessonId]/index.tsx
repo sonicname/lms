@@ -191,6 +191,7 @@ export default function LessonDetailIndexPage() {
                 <Text size='sm' c='dimmed' mb='md'>
                   {current.lesson.content || 'Không có nội dung mô tả.'}
                 </Text>
+
                 <div className='flex flex-col gap-4'>
                   {assetsQuery.isPending && (
                     <Skeleton height={200} radius='md' />
@@ -206,6 +207,14 @@ export default function LessonDetailIndexPage() {
                     </Text>
                   )}
                 </div>
+                {/* Ask a question (placed below media/assets) */}
+                <Card withBorder padding='sm' mt='md'>
+                  <AskQuestion
+                    classId={classId!}
+                    chapterId={current.chapterId}
+                    lessonId={current.lesson.id}
+                  />
+                </Card>
               </>
             ) : (
               <Text c='dimmed'>Đang tải bài học...</Text>
@@ -325,5 +334,95 @@ export default function LessonDetailIndexPage() {
         )}
       </Modal>
     </Container>
+  );
+}
+
+type AskQuestionProps = {
+  classId: string;
+  chapterId: string;
+  lessonId: string;
+};
+
+import { TextInput, Textarea } from '@mantine/core';
+import {
+  useMutation,
+  useQueryClient,
+  useQuery as useRQ,
+} from '@tanstack/react-query';
+import {
+  createQuestion,
+  listQuestions,
+} from '~/modules/school-schedule/services/qa.api';
+
+function AskQuestion({ classId, chapterId, lessonId }: AskQuestionProps) {
+  const qc = useQueryClient();
+  const [title, setTitle] = useState('');
+  const [content, setContent] = useState('');
+
+  const questionsQuery = useRQ({
+    queryKey: ['student', 'questions', classId, chapterId, lessonId],
+    queryFn: () => listQuestions(classId, chapterId, lessonId),
+  });
+
+  const mutation = useMutation({
+    mutationFn: () =>
+      createQuestion(classId, chapterId, lessonId, { title, content }),
+    onSuccess: () => {
+      setTitle('');
+      setContent('');
+      qc.invalidateQueries({
+        queryKey: ['student', 'questions', classId, chapterId, lessonId],
+      });
+    },
+  });
+
+  const disabled = !title.trim() || !content.trim() || mutation.isPending;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <Title order={6}>Đặt câu hỏi</Title>
+      <TextInput
+        placeholder='Tiêu đề câu hỏi'
+        value={title}
+        onChange={(e) => setTitle(e.currentTarget.value)}
+      />
+      <Textarea
+        placeholder='Nội dung câu hỏi'
+        minRows={3}
+        value={content}
+        onChange={(e) => setContent(e.currentTarget.value)}
+      />
+      <Group justify='flex-end'>
+        <Button
+          size='xs'
+          loading={mutation.isPending}
+          disabled={disabled}
+          onClick={() => mutation.mutate()}
+        >
+          Gửi câu hỏi
+        </Button>
+      </Group>
+
+      {questionsQuery.data?.length ? (
+        <div
+          style={{
+            marginTop: 8,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 8,
+          }}
+        >
+          {questionsQuery.data.map((q) => (
+            <Card key={q.id} withBorder padding='sm'>
+              <Text fw={600}>{q.title}</Text>
+              <Text size='sm' c='dimmed'>
+                {' '}
+                {q.content}{' '}
+              </Text>
+            </Card>
+          ))}
+        </div>
+      ) : null}
+    </div>
   );
 }
