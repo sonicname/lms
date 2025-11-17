@@ -534,6 +534,14 @@ export class ClassesService {
               email: true,
             },
           },
+          banners: {
+            select: {
+              url: true,
+              id: true,
+              filename: true,
+            },
+            take: 1,
+          },
         },
       }),
       this.prisma.class.count({ where }),
