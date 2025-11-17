@@ -1,16 +1,22 @@
+import { Carousel } from '@mantine/carousel';
 import {
   Accordion,
+  Avatar,
   Badge,
+  Button,
   Card,
   Container,
   Grid,
   Group,
+  Image,
   Skeleton,
   Text,
   Title,
 } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
+import appEnv from 'app-env';
 import { useEffect, useMemo, useState } from 'react';
+import { FiArrowLeft } from 'react-icons/fi';
 import { useNavigate, useParams } from 'react-router';
 import { getMyClassDetail } from '~/modules/school-schedule/services/classes.api';
 import {
@@ -59,6 +65,15 @@ export default function DetailClassIndexPage() {
 
   return (
     <Container size={1200} py='lg'>
+      <Button
+        variant='light'
+        size='xs'
+        mb='md'
+        leftSection={<FiArrowLeft size={14} />}
+        onClick={() => navigate(-1)}
+      >
+        Quay lại
+      </Button>
       <Grid gutter='lg'>
         <Grid.Col span={{ base: 12, md: 8 }}>
           <Card withBorder>
@@ -144,6 +159,32 @@ export default function DetailClassIndexPage() {
             <Title order={5} mb='xs'>
               Thông tin lớp học
             </Title>
+            {/* Banner carousel / fallback */}
+            {classMetaQuery.isPending ? (
+              <Skeleton height={180} mb='md' />
+            ) : classMetaQuery.data?.banners?.length ? (
+              <Carousel withIndicators height={180} mb='md'>
+                {classMetaQuery.data.banners.map((b) => (
+                  <Carousel.Slide key={b.id}>
+                    <Image
+                      src={`${appEnv.apiUrl}${b.url}`}
+                      alt={b.filename}
+                      h={180}
+                      radius='sm'
+                      fit='cover'
+                    />
+                  </Carousel.Slide>
+                ))}
+              </Carousel>
+            ) : (
+              <Image
+                src='https://picsum.photos/800/180'
+                h={180}
+                radius='sm'
+                mb='md'
+                alt='banner placeholder'
+              />
+            )}
             {classMetaQuery.isPending ? (
               <>
                 <Skeleton height={18} width='60%' mb='xs' />
@@ -151,14 +192,33 @@ export default function DetailClassIndexPage() {
                 <Skeleton height={12} width='80%' />
               </>
             ) : classMetaQuery.data ? (
-              <div className='flex flex-col gap-2'>
-                <Title order={6}>{classMetaQuery.data.name}</Title>
-                <Text size='sm' c='dimmed'>
-                  {classMetaQuery.data.description || '—'}
-                </Text>
-                <Text size='sm'>
-                  Giáo viên: {classMetaQuery.data.teacherId}
-                </Text>
+              <div className='flex flex-col gap-6'>
+                <div className='flex flex-col gap-2'>
+                  <Title order={6}>{classMetaQuery.data.name}</Title>
+                  <Text size='sm' c='dimmed'>
+                    {classMetaQuery.data.description || '—'}
+                  </Text>
+                </div>
+                <Group gap='xs'>
+                  <Avatar
+                    src={
+                      classMetaQuery.data.teacher?.image
+                        ? `${appEnv.apiUrl}${classMetaQuery.data.teacher.image}`
+                        : undefined
+                    }
+                    radius='xl'
+                    size={40}
+                  />
+                  <div>
+                    <Text size='sm' fw={500}>
+                      {classMetaQuery.data.teacher?.name ||
+                        'Không rõ giáo viên'}
+                    </Text>
+                    <Text size='xs' c='dimmed'>
+                      {classMetaQuery.data.teacher?.email}
+                    </Text>
+                  </div>
+                </Group>
               </div>
             ) : (
               <Text c='dimmed'>Không tìm thấy thông tin lớp</Text>
