@@ -1,6 +1,5 @@
 import {
   Accordion,
-  Badge,
   Button,
   Card,
   Container,
@@ -10,13 +9,16 @@ import {
   Modal,
   Skeleton,
   Text,
+  ThemeIcon,
   Title,
 } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
 import appEnv from 'app-env';
 import type { AxiosError } from 'axios';
 import { useEffect, useMemo, useState } from 'react';
+import { FiPlayCircle } from 'react-icons/fi';
 import { useNavigate, useParams } from 'react-router';
+import VideoPlayer from '~/components/video-player';
 import {
   listLessonAssets,
   type AssetModel,
@@ -124,11 +126,7 @@ export default function LessonDetailIndexPage() {
     if (mt.startsWith('video/')) {
       return (
         <Card key={asset.id} withBorder padding='sm'>
-          <video
-            controls
-            style={{ width: '100%', borderRadius: 8 }}
-            src={`${appEnv.apiUrl}${asset.url}`}
-          />
+          <VideoPlayer src={`${appEnv.apiUrl}${asset.url}`} />
           <Text size='xs' mt='xs' c='dimmed'>
             {asset.filename}
           </Text>
@@ -226,46 +224,55 @@ export default function LessonDetailIndexPage() {
                 value={openedChapter}
                 onChange={(v) => setOpenedChapter((v as string) || null)}
                 chevronPosition='left'
+                variant='contained'
+                radius='md'
               >
                 {chapters.map((ch) => (
                   <Accordion.Item key={ch.id} value={ch.id}>
-                    <Accordion.Control>
-                      <Group justify='space-between'>
-                        <Text fw={600}>{ch.title}</Text>
-                        <Badge variant='light'>Thứ tự {ch.displayOrder}</Badge>
-                      </Group>
+                    <Accordion.Control
+                      style={{ background: 'var(--mantine-color-gray-1)' }}
+                    >
+                      <Text fw={700}>{ch.title}</Text>
                     </Accordion.Control>
                     <Accordion.Panel>
-                      <div className='flex flex-col gap-2'>
+                      <div style={{ display: 'flex', flexDirection: 'column' }}>
                         {(lessonsMap[ch.id] || []).map((l) => {
                           const active = l.id === lessonId;
                           return (
-                            <Card
+                            <div
                               key={l.id}
-                              withBorder
-                              padding='xs'
-                              style={{
-                                cursor: 'pointer',
-                                backgroundColor: active
-                                  ? 'var(--mantine-color-blue-light)'
-                                  : undefined,
-                              }}
+                              role='button'
                               onClick={() => {
                                 if (l.id !== lessonId)
                                   navigate(
                                     `/school-schedule/${classId}/${l.id}`,
                                   );
                               }}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 10,
+                                padding: '10px 12px',
+                                borderBottom:
+                                  '1px solid var(--mantine-color-gray-3)',
+                                cursor: 'pointer',
+                                background: active
+                                  ? 'var(--mantine-color-blue-light)'
+                                  : 'white',
+                              }}
                             >
-                              <Group justify='space-between'>
-                                <Text size='sm' fw={500}>
-                                  {l.title}
-                                </Text>
-                                <Text size='xs' c='dimmed'>
-                                  #{l.displayOrder}
-                                </Text>
-                              </Group>
-                            </Card>
+                              <ThemeIcon
+                                radius='xl'
+                                size='sm'
+                                color='gray'
+                                variant='light'
+                              >
+                                <FiPlayCircle size={14} />
+                              </ThemeIcon>
+                              <Text size='sm' fw={500} c='dark.7'>
+                                {l.title}
+                              </Text>
+                            </div>
                           );
                         })}
                         {openedChapter === ch.id &&

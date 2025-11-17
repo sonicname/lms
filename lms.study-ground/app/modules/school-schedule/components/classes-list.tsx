@@ -81,7 +81,7 @@ export function ClassesList({
               />
             )}
           </Card.Section>
-          <Group justify='space-between' align='start'>
+          <Group justify='space-between' align='start' mt='md'>
             <div>
               <Title order={5}>{c.name}</Title>
               <Text size='sm' c='dimmed'>

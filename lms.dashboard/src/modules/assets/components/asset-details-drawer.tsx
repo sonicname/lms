@@ -8,6 +8,7 @@ import {
   Text,
 } from '@mantine/core';
 import appEnv from 'app-env';
+import VideoPlayer from '../../../components/video-player';
 import type { AssetModel } from '../models/asset.model';
 
 export type AssetDetailsDrawerProps = {
@@ -76,12 +77,7 @@ export default function AssetDetailsDrawer({
           {isImage && (
             <Image src={previewUrl} alt={asset.filename} radius='sm' />
           )}
-          {isVideo && (
-            <video controls style={{ width: '100%' }}>
-              <source src={previewUrl} type={asset.mimetype} />
-              Trình duyệt không hỗ trợ video.
-            </video>
-          )}
+          {isVideo && <VideoPlayer src={previewUrl} />}
           {isAudio && (
             <audio controls style={{ width: '100%' }}>
               <source src={previewUrl} type={asset.mimetype} />
